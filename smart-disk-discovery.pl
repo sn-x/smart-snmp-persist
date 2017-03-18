@@ -231,7 +231,10 @@ sub nvmeSMARTD {
 	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
 	chomp $controller ; #remove newline from end of string
 
-	push (@self, ($SMARTCTL . "-a /dev/" . $controller . " -d " . $input->{driver})); # add smart command to array
+	`$SMARTCTL . " -a /dev/" . $controller . " -d " . $input->{driver}` # probe for drive
+	if (($? != 256) && ($? != 512)) { # if smartd succeeded
+		push (@self, ($SMARTCTL . " -a /dev/" . $controller . " -d " . $input->{driver})); # add smart command to array
+	}
 
 	return @self; # return array of smartctl commands
 }
