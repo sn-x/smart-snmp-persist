@@ -14,7 +14,7 @@ Discovered drives are probed for SMART capability. On success, the command is ad
 
 ###### lib/Persist.pm
 
-Prepares SNMP OIDs and outputs with perist.
+Prepares SNMP OIDs and provides pass persist output.
 
 ## Dependencies:
 
@@ -31,4 +31,5 @@ Prepares SNMP OIDs and outputs with perist.
 .. **smartmontools**: https://www.smartmontools.org
 
 apt: apt-get install libsnmp-extension-passpersist-perl libxml-simple-perl libfile-slurp-perl smartmontools lshw
+
 yum: yum install 
