@@ -85,7 +85,7 @@ sub parse_smart_big_table {
 	my %self;
 
 	for my $smart_line (@smart_output) {
-		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)\s*$/) {
+		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)|[h]\s*$/) {
 			$self{"1.".$1.".0"} = $1;  # smart id
 			$self{"1.".$1.".1"} = $2;  # description
 			$self{"1.".$1.".2"} = $4;  # 0-100% life left
