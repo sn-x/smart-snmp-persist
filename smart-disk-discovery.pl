@@ -1,8 +1,5 @@
 #!/usr/bin/perl -w
 
-# detect_smartd_disks.pl
-# version 0.16
-
 use strict;
 use warnings;
 use File::Slurp;
@@ -12,8 +9,7 @@ use XML::Simple;
 my $SMARTCTL = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
 chomp $SMARTCTL; # removes newline from end of string
 
-# key = kernel driver, value = smartd driver
-my %SMARTD_TRANSLATION = (
+my %SMARTD_TRANSLATION = ( # hash with: key: kernel driver, value: smartd driver
 	'megaraid_sas' => 'megaraid',
 	'3w-9xxx'      => '3ware',
 	'aacraid'      => 'scsi',
@@ -125,7 +121,6 @@ sub prepare_drive_hash {
 	return \%self;
 }
 	
-
 sub find_drivers {
 	my ($node) = @_;	# read input
 
@@ -139,12 +134,10 @@ sub find_drivers {
 
 sub find_jbods {
 	my ($node) = @_; # read input
+	my %disks; # create empty hash
 
 	# search through array for devices with drives
-	my %disks;
-
 	$disks{$node->{id}} = prepare_jbod_hash($node) if (($node->{id}) && ($node->{logicalname}));
-
 
 	if ($node->{node}) { # check if node definition exists
 		if(ref($node->{node}) eq 'HASH') { # check if it is a hash
@@ -164,7 +157,7 @@ sub find_jbods {
 
 sub prepare_jbod_hash {
         my ($node) = @_;  # read input
-        my %self;
+        my %self; # create empty hash
 
 	$self{logicalname} = $node->{logicalname}; # we need this for smartd command
 	$self{serial}      = $node->{serial} if ($node->{serial}); # this only helps with debuging
@@ -175,7 +168,6 @@ sub prepare_jbod_hash {
 
 sub prepare_smartd_commands {
 	my @smartd_cmds; # empty array for smartd commands
-
 	my %found_drives = detect_drives(); # fetch drives
 
 	foreach my $drive_value (values %found_drives) { # loop through discovered drives
@@ -197,6 +189,7 @@ sub prepare_smartd_commands {
 			}
 		}
 	}
+
 	return @smartd_cmds;
 }
 
