@@ -1,41 +1,53 @@
 #!/usr/bin/perl -w
 
 package Parser;
-#use strict;
+
+use strict;
 use warnings;
 use File::Slurp;
 use Data::Dumper;
 use XML::Simple;
-use SNMP::Extension::PassPersist;
-use lib 'lib/';
-use Discovery qw(cached_copy);
-use Exporter 'import';
-@EXPORT_OK = qw(detect_smartlog_version);
 
-my $base_oid = ".1.3.6.1.3.3";
-my $nvme_oid  = ".0";
-my $disk_oid  = ".1";
-
-my $cache     = "/tmp/smartd_cache";
 my %drives;
+my $cache_file = "/tmp/smartd_parsed_cache.xml";
+my $base_oid   = ".1.3.6.1.3.3";
+my $nvme_oid   = $base_oid . ".0";
+my $disk_oid   = $base_oid . ".1";
 
 ########################
 #       FUNCTIONS
 #
+
+sub parsed_cached_copy {
+        my $expiry_age = "0.041"; # expire cache after 1 hour
+
+        if ((! -e $cache_file) || ((-M $cache_file) > $expiry_age)) { # if file doesn't exist or if it's older than expiry age
+                my %parsed_data = detect_smartlog_version(); # fetch commands
+		my $xml = XMLout(\%parsed_data);
+                write_file($cache_file, $xml); # save them to file, and add newlines
+        }
+
+	my $cached_file = read_file($cache_file); # read file
+	chomp ($cached_file);
+
+	my %cached_results = XMLin($cached_file); # parse XML string
+
+        return %cached_results if (%cached_results);
+}
 
 sub detect_smartlog_version {
 	my %self;
 	my %smart_data = fetch_smart_data();
 
 	for my $disk (keys %smart_data) {
-		$self{$disk}{exitcode} = $smart_data{$disk}{exitcode};
+		$self{$disk}{exicode} = $smart_data{$disk}{exitcode};
 		for my $smart_output_line (@{$smart_data{$disk}{data}}) {
                         $self{$disk}{vendor} = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
                         $self{$disk}{model}  = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
                         $self{$disk}{serial} = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
-			$self{$disk}{attributes} = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
-			$self{$disk}{attributes} = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{attributes} = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
+			$self{$disk}{smart}  = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
+			$self{$disk}{smart}  = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
+			$self{$disk}{smart}  = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
 		}
 	}
 
@@ -46,14 +58,13 @@ sub fetch_smart_data {
 	my %self;
 	my $loop = 0;
 	my @smartd_commands = Discovery->cached_copy();
-#	print Dumper(Discovery->cached_copy());
 	chomp @smartd_commands;
 
 	for my $smart_command (@smartd_commands) {
 		if ($smart_command) {
 			my @smart_output = `$smart_command`;
-			push (@{$self{$loop}{data}}, values @smart_output);
-			$self{$loop}{exitcode} = $?;
+			push (@{$self{"drive-".$loop}{data}}, values @smart_output);
+			$self{"drive-".$loop}{exitcode} = $?;
 			$loop++;
 		}
 	}

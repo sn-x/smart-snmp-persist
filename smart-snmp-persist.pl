@@ -3,19 +3,14 @@
 use strict;
 use warnings;
 use Data::Dumper;
+
 use lib 'lib/';
-use Discovery qw(detect_drives prepare_smartd_commands cached_copy);
-use Parser qw(detect_smartlog_version);
-
-my $base_oid = ".1.3.6.1.3.3";
-my $nvme_oid  = ".0";
-my $disk_oid  = ".1";
-
-my $cache     = "/tmp/smartd_cache";
-my %drives;
+use Discovery;
+use Parser;
+use Persist;
 
 ########################
-#       CORE
+#       START HERE
 #
 startup();
 
@@ -28,7 +23,8 @@ sub startup {
                 print "Use one of the below command line arguments:\n";
                 print "\n";
                 print "smart_parsed         -       print to stdout\n";
-                print "smart_persist        -       snmp persist\n";
+		print "smart_cached         -       hourly cached results\n";
+                print "snmp_persist         -       snmp pass persist\n";
                 print "discovered_devices   -       filtered devices list\n";
                 print "discovered_commands  -       smartd commands\n";
                 print "discovered_cached    -       daily cached results\n";
@@ -60,6 +56,10 @@ sub startup {
         }
         elsif ((@ARGV) && $ARGV[0] eq "smart_parsed") {
                 my %smartd_data = Parser->detect_smartlog_version();
+                print Dumper(\%smartd_data);
+        }
+        elsif ((@ARGV) && $ARGV[0] eq "smart_cached") {
+                my %smartd_data = Parser->parsed_cached_copy();
                 print Dumper(\%smartd_data);
         }
         else {

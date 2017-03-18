@@ -1,19 +1,16 @@
 #!/usr/bin/perl -w
 
 package Discovery;
+
 #use strict;
 use warnings;
 use File::Slurp;
 use Data::Dumper;
 use XML::Simple;
 
-use Exporter 'import';
-@EXPORT_OK = qw(detect_drives prepare_smartd_commands cached_copy);
-
 my $inetractive = 1;
-
-my $SMARTCTL = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
-chomp $SMARTCTL; # removes newline from end of string
+my $smartctl    = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
+chomp $smartctl; # removes newline from end of string
 
 my %SMARTD_TRANSLATION = ( # hash with: key: kernel driver, value: smartd driver
 	'megaraid_sas' => 'megaraid',
@@ -159,7 +156,7 @@ sub prepare_smartd_commands {
 sub cached_copy {
 	my $tmp_file = "/tmp/smartd_discovered.txt"; # cache file path 
 	my $expiry_age = "1"; # expire cache after 1 day
-	$interactive = 0;
+	my $interactive = 0;
 
 	if ((! -e $tmp_file) || ((-M $tmp_file) > $expiry_age)) { # if file doesn't exist or if it's older than expiry age
 		my @smartd_commands = prepare_smartd_commands(); # fetch commands
@@ -167,6 +164,7 @@ sub cached_copy {
 	}
 
 	my @cached_file = read_file($tmp_file); # read file
+	chomp (@cached_file);
 
 	return @cached_file if (@cached_file);
 }
@@ -180,8 +178,8 @@ sub jbodSMARTD {
 	my ($input) = @_; # get input
 
 	foreach my $drive (keys %{$input->{drives}}) {
-		`$SMARTCTL -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
-		push (@self, ($SMARTCTL . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512)); # add smart command to array
+		`$smartctl -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
+		push (@self, ($smartctl . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512)); # add smart command to array
 	}
 	return @self; # return array of smartctl commands
 }
@@ -193,8 +191,8 @@ sub nvmeSMARTD {
 	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
 	chomp $controller ; #remove newline from end of string
 
-	`$SMARTCTL . " -a /dev/" . $controller . " -d " . $input->{driver}`; # probe for drive
-	push (@self, ($SMARTCTL . " -a /dev/" . $controller . " -d " . $input->{driver})) if ($? != 512); # add smart command to array
+	`$smartctl . " -a /dev/" . $controller . " -d " . $input->{driver}`; # probe for drive
+	push (@self, ($smartctl . " -a /dev/" . $controller . " -d " . $input->{driver})) if ($? != 512); # add smart command to array
 
 	return @self; # return array of smartctl commands
 }
@@ -210,9 +208,9 @@ sub scsiSMARTD {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
 
-		`$SMARTCTL -a $sg_dev -d $driver`; # probe for drive
+		`$smartctl -a $sg_dev -d $driver`; # probe for drive
 		if (($? != 256) && ($? != 512)) { # if smartd succeeded
-			push (@self, ($SMARTCTL . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
+			push (@self, ($smartctl . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
 		}
 	}
 
@@ -232,9 +230,9 @@ sub wareSMARTD {
 		chomp $tw_dev; # remove newline from end of string
 
 		while (($? != 256) && ($? != 512)) { # work until exist status == 0
-			`$SMARTCTL -a $tw_dev -d $driver,$loop`; # probe for drive
+			`$smartctl -a $tw_dev -d $driver,$loop`; # probe for drive
 			if (($? != 256) && ($? != 512)) { # if smartd succeeded
-				push (@self, ($SMARTCTL . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
+				push (@self, ($smartctl . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 		$loop++; # increment $loop
 		}
@@ -256,9 +254,9 @@ sub megaraidSMARTD {
 		$?              = 0; # because it's a new drive, we reset exit status
 
 		while (($? != 256) && ($? != 512)) { # exit loop if no drive detected 
-			`$SMARTCTL -a $logicalname -d $driver,$loop`; # probe for drive
+			`$smartctl -a $logicalname -d $driver,$loop`; # probe for drive
 			if (($? != 256) && ($? != 512)) { # if smartd succeeded
-				push (@self, ($SMARTCTL . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
+				push (@self, ($smartctl . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 			$loop++; # increment $loop
 		}
@@ -269,9 +267,9 @@ sub megaraidSMARTD {
                         my $loop = 0; # because it's a new drive, we reset loop
                         $?       = 0; # because it's a new drive, we reset exit status
                         while (($? != 256) && ($? != 512)) { # exit loop if no drive detected
-                                `$SMARTCTL -a $drive -d $driver,$loop`; # probe for drive
+                                `$smartctl -a $drive -d $driver,$loop`; # probe for drive
                                 if (($? != 256) && ($? != 512)) { # if smartd succeeded
-                                        push (@self, ($SMARTCTL . " -a " . $drive . " -d " . $driver . "," . $loop)); # add smart command to array
+                                        push (@self, ($smartctl . " -a " . $drive . " -d " . $driver . "," . $loop)); # add smart command to array
                                 }
                                 $loop++; # increment $loop
                         }
@@ -280,3 +278,5 @@ sub megaraidSMARTD {
 
 	return @self; # return array of smartctl commands
 }
+
+return 1;
