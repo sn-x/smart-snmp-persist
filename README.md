@@ -18,7 +18,7 @@ Prepares SNMP OIDs and outputs with perist.
 
 ## Dependencies:
 
-###### lib/Discovery.pm
+.. **SNMP::Extension::PassPersist**: https://metacpan.org/pod/SNMP::Extension::PassPersist
 
 .. **File::Slurp**: https://metacpan.org/pod/File::Slurp
 
@@ -30,17 +30,5 @@ Prepares SNMP OIDs and outputs with perist.
 
 .. **smartmontools**: https://www.smartmontools.org
 
-Debian and derivatives: apt-get install libxml-simple-perl libfile-slurp-perl smartmontools lshw
-###### lib/Parser.pm 
-
-.. **File::Slurp**: https://metacpan.org/pod/File::Slurp
-
-.. **Data::Dumper**: https://metacpan.org/pod/Data::Dumper
-
-.. **XML::Simple**: https://metacpan.org/pod/XML::Simple
-
-.. **smartmontools**: https://www.smartmontools.org
-
-.. **smart-disk-discovery.pl**
-
-
+apt: apt-get install libsnmp-extension-passpersist-perl libxml-simple-perl libfile-slurp-perl smartmontools lshw
+yum: yum install 
