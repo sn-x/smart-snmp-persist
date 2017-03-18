@@ -59,8 +59,8 @@ sub startup {
                 print Dumper(\%smartd_data);
         }
         elsif ((@ARGV) && $ARGV[0] eq "smart_cached") {
-                my %smartd_data = Parser->parsed_cached_copy();
-                print Dumper(\%smartd_data);
+                my $smartd_data = Parser->parsed_cached_copy();
+                print Dumper($smartd_data);
         }
         else {
                 print "Sorry. Unsupported argument: " . $ARGV[0] . " \n";

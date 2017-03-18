@@ -23,16 +23,15 @@ sub parsed_cached_copy {
 
         if ((! -e $cache_file) || ((-M $cache_file) > $expiry_age)) { # if file doesn't exist or if it's older than expiry age
                 my %parsed_data = detect_smartlog_version(); # fetch commands
-		my $xml = XMLout(\%parsed_data);
+		my $xml = XMLout(\%parsed_data,
+                      NoAttr => 1,
+                      RootName=>'smart',
+                     );
                 write_file($cache_file, $xml); # save them to file, and add newlines
         }
 
-	my $cached_file = read_file($cache_file); # read file
-	chomp ($cached_file);
-
-	my %cached_results = XMLin($cached_file); # parse XML string
-
-        return %cached_results if (%cached_results);
+	my $cached_results = XMLin($cache_file); # parse XML string
+        return $cached_results if ($cached_results);
 }
 
 sub detect_smartlog_version {
@@ -40,14 +39,14 @@ sub detect_smartlog_version {
 	my %smart_data = fetch_smart_data();
 
 	for my $disk (keys %smart_data) {
-		$self{$disk}{exicode} = $smart_data{$disk}{exitcode};
+		$self{$disk}{exitcode} = $smart_data{$disk}{exitcode};
 		for my $smart_output_line (@{$smart_data{$disk}{data}}) {
                         $self{$disk}{vendor} = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
                         $self{$disk}{model}  = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
                         $self{$disk}{serial} = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
-			$self{$disk}{smart}  = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
-			$self{$disk}{smart}  = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{smart}  = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
+			$self{$disk}{attributes}  = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
+			$self{$disk}{attributes}  = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
+			$self{$disk}{attributes}  = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
 		}
 	}
 
@@ -83,11 +82,11 @@ sub parse_smart_big_table {
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)|[h]\s*$/) {
-			$self{"1.".$1.".0"} = $1;  # smart id
-			$self{"1.".$1.".1"} = $2;  # description
-			$self{"1.".$1.".2"} = $4;  # 0-100% life left
-			$self{"1.".$1.".3"} = $5;  # worst
-			$self{"1.".$1.".4"} = $10; # raw value
+			$self{"smart_1.".$1.".0"} = $1;  # smart id
+			$self{"smart_1.".$1.".1"} = $2;  # description
+			$self{"smart_1.".$1.".2"} = $4;  # 0-100% life left
+			$self{"smart_1.".$1.".3"} = $5;  # worst
+			$self{"smart_1.".$1.".4"} = $10; # raw value
 		}
 	}
 
