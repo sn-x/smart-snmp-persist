@@ -11,7 +11,7 @@ through net-snmp pass persist feature.
 ###### smart-disk-discovery.pl:
 
 Script uses **lshw** to probe for hardware info. It parses this data and tries to extract disk drives.
-Discovered drives are probed for SMART capability. If it works, the command is added to output.
+Discovered drives are probed for SMART capability. On success, the command is added to output.
 
 ## Dependencies:
 
