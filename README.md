@@ -16,18 +16,28 @@ Discovered drives are probed for SMART capability. If it works, the command is a
 ## Dependencies:
 
 smart-disk-discovery.pl: 
+
 	**File::Slurp**: https://metacpan.org/pod/File::Slurp
+
 	**Data::Dumper**: https://metacpan.org/pod/Data::Dumper
+
 	**XML::Simple**: https://metacpan.org/pod/XML::Simple
+
 	**lshw**: http://ezix.org/project/wiki/HardwareLiSter
+
 	**smartmontools**: https://www.smartmontools.org
 
 
 smart-snmp-persist.pl: 
+
 	**File::Slurp**: https://metacpan.org/pod/File::Slurp
+
 	**Data::Dumper**: https://metacpan.org/pod/Data::Dumper
+
 	**XML::Simple**: https://metacpan.org/pod/XML::Simple
+
 	**smartmontools**: https://www.smartmontools.org
+
 	**smart-disk-discovery.pl**
 
 
