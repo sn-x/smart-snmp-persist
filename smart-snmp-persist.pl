@@ -60,7 +60,7 @@ sub detect_smartlog_version {
 sub fetch_smart_data {
 	my %self;
 	my $loop = 0;
-	my @smartd_commands = `sudo perl smart-disk-discovery.pl cached`;
+	my @smartd_commands = `perl smart-disk-discovery.pl cached`;
 	chomp @smartd_commands;
 
 	for my $smart_command (@smartd_commands) {
