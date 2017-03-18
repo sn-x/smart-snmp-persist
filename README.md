@@ -3,19 +3,19 @@ SMART prober and parser with SNMP persist output
 
 ## Short about
 
-###### smart-snmp-persist.pl:
+###### lib/Parser.pm
 
 It fetches a list of valid smartctl commands from **smart-disk-discovery.pl** and parses their output. Parsed data can be returned
 through net-snmp pass persist feature.
 
-###### smart-disk-discovery.pl:
+###### lib/Discovery.pm
 
 Script uses **lshw** to probe for hardware info. It parses this data and tries to extract disk drives.
 Discovered drives are probed for SMART capability. On success, the command is added to output.
 
 ## Dependencies:
 
-###### smart-disk-discovery.pl:
+###### lib/Discovery.pm
 
 ..**File::Slurp**: https://metacpan.org/pod/File::Slurp
 
@@ -28,7 +28,7 @@ Discovered drives are probed for SMART capability. On success, the command is ad
 ..**smartmontools**: https://www.smartmontools.org
 
 Debian and derivatives: apt-get install libxml-simple-perl libfile-slurp-perl smartmontools lshw
-###### smart-snmp-persist.pl: 
+###### lib/Parser.pm 
 
 ..**File::Slurp**: https://metacpan.org/pod/File::Slurp
 
