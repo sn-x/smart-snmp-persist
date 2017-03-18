@@ -50,7 +50,7 @@ sub detect_smartlog_version {
                         $self{$disk}{serial} = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
 			$self{$disk}{attributes} = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
 			$self{$disk}{attributes} = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{attributes} = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information (NVMe Log 0x02, NSID 0xffffffff)");
+			$self{$disk}{attributes} = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
 		}
 	}
 
