@@ -106,7 +106,7 @@ sub parse_smart_small_table {
 		if ($smart_line =~ /^(\w+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d*)\s*$/) { 
 			my $unique = 0;
 
-			$unique = 1 if ($1 =~ /^read:.*/");
+			$unique = 1 if ($1 =~ /^read:.*/);
 			$unique = 2 if ($1 =~ /^write:.*/);
 			$unique = 3 if ($1 =~ /^verify:.*/);
 
