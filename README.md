@@ -17,6 +17,10 @@ Provides pass persist output.
 
 ## Dependencies:
 
+apt: apt-get install libsnmp-extension-passpersist-perl libxml-simple-perl libfile-slurp-perl smartmontools lshw
+
+yum: yum install
+
 **SNMP::Extension::PassPersist**: https://metacpan.org/pod/SNMP::Extension::PassPersist
 
 **File::Slurp**: https://metacpan.org/pod/File::Slurp
@@ -28,10 +32,6 @@ Provides pass persist output.
 **lshw**: http://ezix.org/project/wiki/HardwareLiSter
 
 **smartmontools**: https://www.smartmontools.org
-
-apt: apt-get install libsnmp-extension-passpersist-perl libxml-simple-perl libfile-slurp-perl smartmontools lshw
-
-yum: yum install 
 
 ## Supported features
 
