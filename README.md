@@ -5,16 +5,15 @@ SMART prober and parser with SNMP persist output
 
 ###### lib/Parser.pm
 
-It fetches a list of valid smartctl commands from **smart-disk-discovery.pl** and parses their output.
+Parses smartctl output
 
 ###### lib/Discovery.pm
 
-Script uses **lshw** to probe for hardware info. It parses this data and tries to extract disk drives.
-Discovered drives are probed for SMART capability. On success, the command is added to output.
+Discoveres SMART capable disk drives
 
 ###### lib/Persist.pm
 
-Prepares SNMP OIDs and provides pass persist output.
+Provides pass persist output.
 
 ## Dependencies:
 
