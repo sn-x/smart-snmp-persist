@@ -41,13 +41,13 @@ yum: yum install
 
 ## Roadmap
 
-Extend support for additional drives
-
-Extend support for different SMART output
-
-Prepare MIB
+Prepare SNMP MIB
 
 Prepare Nagios monitoring script
 
 Prepare Cacti templates
+
+Extend discovery support for additional drivers
+
+Extend parser support for additional SMART outputs
 

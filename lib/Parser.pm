@@ -8,11 +8,7 @@ use File::Slurp;
 use Data::Dumper;
 use XML::Simple;
 
-my %drives;
 my $cache_file = "/tmp/smartd_parsed_cache.xml";
-my $base_oid   = ".1.3.6.1.3.3";
-my $nvme_oid   = $base_oid . ".0";
-my $disk_oid   = $base_oid . ".1";
 
 ########################
 #       FUNCTIONS
@@ -41,12 +37,12 @@ sub detect_smartlog_version {
 	for my $disk (keys %smart_data) {
 		$self{$disk}{exitcode} = $smart_data{$disk}{exitcode};
 		for my $smart_output_line (@{$smart_data{$disk}{data}}) {
-                        $self{$disk}{vendor} = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
-                        $self{$disk}{model}  = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
-                        $self{$disk}{serial} = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
-			$self{$disk}{attributes}  = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
-			$self{$disk}{attributes}  = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{attributes}  = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
+                        $self{$disk}{vendor}      = parse_smart_vendor($smart_output_line)               if parse_smart_vendor($smart_output_line);
+                        $self{$disk}{model}       = parse_smart_model($smart_output_line)                if parse_smart_model($smart_output_line);
+                        $self{$disk}{serial}      = parse_smart_serial($smart_output_line)               if parse_smart_serial($smart_output_line);
+			$self{$disk}{big_table}   = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
+			$self{$disk}{small_table} = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
+			$self{$disk}{nvme}        = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
 		}
 	}
 
@@ -82,11 +78,11 @@ sub parse_smart_big_table {
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)|[h]\s*$/) {
-			$self{"smart_1.".$1.".0"} = $1;  # smart id
-			$self{"smart_1.".$1.".1"} = $2;  # description
-			$self{"smart_1.".$1.".2"} = $4;  # 0-100% life left
-			$self{"smart_1.".$1.".3"} = $5;  # worst
-			$self{"smart_1.".$1.".4"} = $10; # raw value
+			$self{"smart_".$1.".0"} = $1;  # smart id
+			$self{"smart_".$1.".1"} = $2;  # description
+			$self{"smart_".$1.".2"} = $4;  # 0-100% life left
+			$self{"smart_".$1.".3"} = $5;  # worst
+			$self{"smart_".$1.".4"} = $10; # raw value
 		}
 	}
 
@@ -100,20 +96,13 @@ sub parse_smart_small_table {
 
         for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^(\w+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d*)\s*$/) { 
-			my $unique = 0;
-
-			$unique = 1 if ($1 =~ /^read:.*/);
-			$unique = 2 if ($1 =~ /^write:.*/);
-			$unique = 3 if ($1 =~ /^verify:.*/);
-
-			$self{"2.".$unique.".0"} = $1;	# "read / write / verify"
-			$self{"2.".$unique.".0"} = $2;	# "Errors Corrected by ECC - Fast"
-			$self{"2.".$unique.".1"} = $3;	# "Errors Corrected by ECC - Delayed"
-			$self{"2.".$unique.".2"} = $4;	# "Rereads and Rewrites"
-			$self{"2.".$unique.".3"} = $5;	# "Total errors corrected"
-			$self{"2.".$unique.".4"} = $6;	# "Correction alghoritm invocation"
-			$self{"2.".$unique.".5"} = $7;	# "Gigabytes processed [10^9 bytes]"
-			$self{"2.".$unique.".6"} = $8;	# "Total uncorrected errors"
+			$self{"smart_".$1.".0"} = $2;	# "Errors Corrected by ECC - Fast"
+			$self{"smart_".$1.".1"} = $3;	# "Errors Corrected by ECC - Delayed"
+			$self{"smart_".$1.".2"} = $4;	# "Rereads and Rewrites"
+			$self{"smart_".$1.".3"} = $5;	# "Total errors corrected"
+			$self{"smart_".$1.".4"} = $6;	# "Correction alghoritm invocation"
+			$self{"smart_".$1.".5"} = $7;	# "Gigabytes processed [10^9 bytes]"
+			$self{"smart_".$1.".6"} = $8;	# "Total uncorrected errors"
                 }
         }
 
@@ -126,9 +115,9 @@ sub parse_smart_nvme {
         my %self;
 
 	foreach my $smart_line (@smart_output) {
-		$self{"3.1"} = $1         if ($smart_line =~ /^Temperature:\s*(\d+).*$/);
-		$self{"3.2"} = $1         if ($smart_line =~ /^Available Spare:\s*(\d+).*$/);
-		$self{"3.3"} = "100" - $1 if ($smart_line =~ /^Percentage Used:\s*(\d+).*$/);
+		$self{smart_1} = $1         if ($smart_line =~ /^Temperature:\s*(\d+).*$/);
+		$self{smart_2} = $1         if ($smart_line =~ /^Available Spare:\s*(\d+).*$/);
+		$self{smart_3} = "100" - $1 if ($smart_line =~ /^Percentage Used:\s*(\d+).*$/);
 	}
 
 	return \%self;

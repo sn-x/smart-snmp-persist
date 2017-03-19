@@ -9,6 +9,8 @@ use Discovery;
 use Parser;
 use Persist;
 
+my $inetractive = 1;
+
 ########################
 #       START HERE
 #
