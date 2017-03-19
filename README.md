@@ -17,18 +17,37 @@ Provides pass persist output.
 
 ## Dependencies:
 
-.. **SNMP::Extension::PassPersist**: https://metacpan.org/pod/SNMP::Extension::PassPersist
+**SNMP::Extension::PassPersist**: https://metacpan.org/pod/SNMP::Extension::PassPersist
 
-.. **File::Slurp**: https://metacpan.org/pod/File::Slurp
+**File::Slurp**: https://metacpan.org/pod/File::Slurp
 
-.. **Data::Dumper**: https://metacpan.org/pod/Data::Dumper
+**Data::Dumper**: https://metacpan.org/pod/Data::Dumper
 
-.. **XML::Simple**: https://metacpan.org/pod/XML::Simple
+**XML::Simple**: https://metacpan.org/pod/XML::Simple
 
-.. **lshw**: http://ezix.org/project/wiki/HardwareLiSter
+**lshw**: http://ezix.org/project/wiki/HardwareLiSter
 
-.. **smartmontools**: https://www.smartmontools.org
+**smartmontools**: https://www.smartmontools.org
 
 apt: apt-get install libsnmp-extension-passpersist-perl libxml-simple-perl libfile-slurp-perl smartmontools lshw
 
 yum: yum install 
+
+## Supported features
+
+**SMART Discovery**: JBODs without a driver, drivers: megaraid_sas, 3w-9xxx, aacraid, nvme, mpt2sas, ahci, isci
+
+**SMART Parser**: Full table, Small table, Intel NVMe
+
+## Roadmap
+
+Extend support for additional drives
+
+Extend support for different SMART output
+
+Prepare MIB
+
+Prepare Nagios monitoring script
+
+Prepare Cacti templates
+
