@@ -39,9 +39,7 @@ sub tree {
 		my $oid;
 		$oid = unique_oid($hash{$drive}, $unique);
 
-		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{'big_table'};
-		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{'small_table'};
-		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{'nvme'};
+		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{attributes};
 	    
 		$unique++;
 	}
@@ -69,13 +67,13 @@ sub oid_tree {
 	push(@array, ($oid . ".3"   => ['string',  $device{'serial'}]));
 	push(@array, ($oid . ".100" => ['integer', $device{'exitcode'}]));
 
-	for my $smart_id (keys %{$device{'big_table'}}) {
+	for my $smart_id (keys %{$device{'attributes'}}) {
 		my $original_id = $smart_id;
 		$smart_id =~ s/smart_/./g;
 
 		my $full_oid = $oid . ".101" . $smart_id;
 
-		push(@array, ($full_oid => ['integer',  $device{'big_table'}{$original_id}]));		
+		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}
 		
 	return @array;
