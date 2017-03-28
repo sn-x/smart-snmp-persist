@@ -9,8 +9,6 @@ use Discovery;
 use Parser;
 use Persist;
 
-my $inetractive = 1;
-
 ########################
 #       START HERE
 #
@@ -57,12 +55,16 @@ sub startup {
                 }
         }
         elsif ((@ARGV) && $ARGV[0] eq "smart_parsed") {
-                my %smartd_data = Parser->detect_smartlog_version();
+                my %smartd_data = Parser->parse_smartlog();
                 print Dumper(\%smartd_data);
         }
         elsif ((@ARGV) && $ARGV[0] eq "smart_cached") {
-                my $smartd_data = Parser->parsed_cached_copy();
+                my $smartd_data = Parser->fetch_parser_cache();
                 print Dumper($smartd_data);
+        }
+        elsif ((@ARGV) && $ARGV[0] eq "snmp_persist") {
+                my $smartd_data = Persist->persist();
+                #print Dumper($smartd_data);
         }
         else {
                 print "Sorry. Unsupported argument: " . $ARGV[0] . " \n";

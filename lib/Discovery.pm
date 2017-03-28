@@ -12,7 +12,7 @@ $Discovery::interactive = 1; # enable verbose output. disabled when using cached
 $Discovery::smartctl    = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
 chomp $Discovery::smartctl; # removes newline from end of string
 
-my %SMARTD_TRANSLATION = ( # hash with: key: kernel driver, value: smartd driver
+my %SMARTD_TRANSLATION = ( # hash contains: key -> kernel driver, value -> smartd driver
 	'megaraid_sas' => 'megaraid',
 	'3w-9xxx'      => '3ware',
 	'aacraid'      => 'scsi',
