@@ -45,15 +45,24 @@ sub parse_smartlog {
 		$self{$disk}{exitcode} = $smart_data{$disk}{exitcode};
 		
 		for my $smart_output_line (@{$smart_data{$disk}{data}}) {
-			$self{$disk}{vendor}      = parse_smart_vendor($smart_output_line)               if parse_smart_vendor($smart_output_line);
-			$self{$disk}{model}       = parse_smart_model($smart_output_line)                if parse_smart_model($smart_output_line);
-			$self{$disk}{serial}      = parse_smart_serial($smart_output_line)               if parse_smart_serial($smart_output_line);
-			$self{$disk}{big_table}   = "yep"                                                if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
-			$self{$disk}{attributes}  = parse_smart_big_table(@{$smart_data{$disk}{data}})   if ($smart_output_line =~ "SMART Attributes Data Structure revision number");
-			$self{$disk}{small_table} = "yep"                                                if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{attributes}  = parse_smart_small_table(@{$smart_data{$disk}{data}}) if ($smart_output_line =~ "Error counter log:");
-			$self{$disk}{nvme}        = "yep"                                                if ($smart_output_line =~ "SMART/Health Information");
-			$self{$disk}{attributes}  = parse_smart_nvme(@{$smart_data{$disk}{data}})        if ($smart_output_line =~ "SMART/Health Information");
+			$self{$disk}{vendor}      = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
+			$self{$disk}{model}       = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
+			$self{$disk}{serial}      = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
+
+			if ($smart_output_line =~ "SMART Attributes Data Structure revision number") {
+				$self{$disk}{big_table}   = "found";
+				$self{$disk}{attributes}  = parse_smart_big_table(@{$smart_data{$disk}{data}})
+			}
+
+			if ($smart_output_line =~ "Error counter log:") {
+				$self{$disk}{small_table} = "found";
+				$self{$disk}{attributes}  = parse_smart_small_table(@{$smart_data{$disk}{data}})
+			}
+
+			if ($smart_output_line =~ "SMART/Health Information") {
+				$self{$disk}{nvme} = "found";
+				$self{$disk}{attributes}  = parse_smart_nvme(@{$smart_data{$disk}{data}})
+			}
 		}
 	}
 
@@ -91,7 +100,6 @@ sub parse_smart_big_table {
 		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)|[h]\s*$/) {
 						#	$1 = smart id
 						#	$2 = description
-			
 			$self{"smart_".$1.".1"} = $4;  # 0-100% life left
 			$self{"smart_".$1.".2"} = $5;  # worst
 			$self{"smart_".$1.".3"} = $10; # raw value
@@ -153,8 +161,7 @@ sub parse_smart_model {
 sub parse_smart_serial {
 	my ($self) = @_;
 
-	return $1 if ($self =~ /^Serial Number:\s*(\w.*)$/);
-	return $1 if ($self =~ /^Serial number:\s*(\w.*)$/);
+	return $1 if ($self =~ /^Serial number:\s*(\w.*)$/i);
 }
 
 return 1;

@@ -36,11 +36,8 @@ sub tree {
 	my $oid;
 			
 	foreach my $drive (keys %hash) {
-		my $oid;
 		$oid = unique_oid($hash{$drive}, $unique);
-
 		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{attributes};
-	    
 		$unique++;
 	}
 
@@ -50,9 +47,9 @@ sub tree {
 sub unique_oid {
 	my ($hash, $unique) = @_;
 
-	return $base_oid . $unique . ".1" if (%$hash{'big_table'});
-	return $base_oid . $unique . ".2" if (%$hash{'small_table'});
-	return $base_oid . $unique . ".3" if (%$hash{'nvme'});
+	return $base_oid . $unique . ".1" if (%{$hash}{'big_table'});
+	return $base_oid . $unique . ".2" if (%{$hash}{'small_table'});
+	return $base_oid . $unique . ".3" if (%{$hash}{'nvme'});
 
 	return 0;		
 }
@@ -62,17 +59,15 @@ sub oid_tree {
 	my %device      = %{$self};
 	my @array;
 
-	push(@array, ($oid . ".1"   => ['string',  $device{'vendor'}]));		
-	push(@array, ($oid . ".2"   => ['string',  $device{'model'}]));
-	push(@array, ($oid . ".3"   => ['string',  $device{'serial'}]));
+	push(@array, ($oid . ".1"   => ['string',  $device{'model'}]))  if $device{'model'};
+	push(@array, ($oid . ".2"   => ['string',  $device{'serial'}])) if $device{'serial'};
+	push(@array, ($oid . ".3"   => ['string',  $device{'vendor'}])) if $device{'vendor'};
 	push(@array, ($oid . ".100" => ['integer', $device{'exitcode'}]));
 
 	for my $smart_id (keys %{$device{'attributes'}}) {
 		my $original_id = $smart_id;
 		$smart_id =~ s/smart_/./g;
-
 		my $full_oid = $oid . ".101" . $smart_id;
-
 		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}
 		
