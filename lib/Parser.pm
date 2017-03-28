@@ -116,6 +116,7 @@ sub parse_smart_small_table {
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^(\w+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d*)\s*$/) { 
+						# $1 = read / write / verify
 			$self{"smart_1_".$1} = $2;	# "Errors Corrected by ECC - Fast"
 			$self{"smart_2_".$1} = $3;	# "Errors Corrected by ECC - Delayed"
 			$self{"smart_3_".$1} = $4;	# "Rereads and Rewrites"
