@@ -4,7 +4,16 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use lib 'lib/';
+BEGIN {
+	$0 =~ /(.*)\/.*$/;
+	if ($1) {
+	    push ( @INC, $1 . "/lib/");
+	}
+	else {
+		push ( @INC, "lib/");
+	}
+}
+
 use Discovery;
 use Parser;
 use Persist;
