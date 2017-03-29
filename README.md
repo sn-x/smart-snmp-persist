@@ -39,15 +39,17 @@ yum: yum install
 
 **SMART Parser**: Full table, Small table, Intel NVMe
 
+**SNMP Persist**
+
 ## Roadmap
 
-Prepare SNMP MIB
+- Prepare SNMP MIB
 
-Prepare Nagios monitoring script
+- Prepare Nagios monitoring script
 
-Prepare Cacti templates
+- Prepare Cacti templates
 
-Extend discovery support for additional drivers
+- Extend discovery support for additional drivers
 
-Extend parser support for additional SMART outputs
+- Extend parser support for additional SMART outputs
 
