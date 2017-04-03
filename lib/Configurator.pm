@@ -14,4 +14,14 @@ our $persist_snmp_base_oid      = ".1.3.6.1.3.3."; # this must match with snmpd.
 chomp $lshw_bin; # remove newline
 chomp $smartctl_bin; # remove newline
 
+our %driver_map = ( # hash contains: key -> kernel driver, value -> smartd driver
+        'megaraid_sas' => 'megaraid',
+        '3w-9xxx'      => '3ware',
+        'aacraid'      => 'scsi',
+        'nvme'         => 'nvme',
+        'mpt2sas'      => '',
+        'ahci'         => '',
+        'isci'         => ''
+);
+
 return 1;

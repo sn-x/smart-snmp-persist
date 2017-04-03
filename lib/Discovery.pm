@@ -8,20 +8,6 @@ use Configurator;
 use File::Slurp;
 use XML::Simple;
 
-#$Discovery::interactive = 1; # enable verbose output. disabled when using cached values
-#$Discovery::smartctl    = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
-#chomp $Discovery::smartctl; # removes newline from end of string
-
-my %SMARTD_TRANSLATION = ( # hash contains: key -> kernel driver, value -> smartd driver
-	'megaraid_sas' => 'megaraid',
-	'3w-9xxx'      => '3ware',
-	'aacraid'      => 'scsi',
-	'nvme'         => 'nvme',
-	'mpt2sas'      => '',
-	'ahci'         => '',
-	'isci'         => ''
-);
-
 ########################
 #	FUNCTIONS
 #
@@ -139,7 +125,7 @@ sub prepare_smartd_commands {
 		}
 
 		if ($drive_value->{driver}) { # if a device has a driver
-			if (\$SMARTD_TRANSLATION{$drive_value->{driver}}) { # check if the driver is supported and use configured function
+			if (\$Configurator::driver_map{$drive_value->{driver}}) { # check if the driver is supported and use configured function
 				push(@smartd_cmds, jbodSMARTD($drive_value))     if ($drive_value->{driver} eq "ahci");
 				push(@smartd_cmds, jbodSMARTD($drive_value))	 if ($drive_value->{driver} eq "isci");
 				push(@smartd_cmds, jbodSMARTD($drive_value))	 if ($drive_value->{driver} eq "mpt2sas");
@@ -201,10 +187,10 @@ sub nvmeSMARTD {
 sub scsiSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
 	my @sg_devs = `ls /dev/sg*`; # fetch all scsi drives
 
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $sg_dev (@sg_devs) {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
@@ -221,10 +207,10 @@ sub scsiSMARTD {
 sub wareSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
 	my @tw_devs = `ls /dev/tw*`; # fetch all virtual drives created by driver
 
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $tw_dev (@tw_devs) {
 		my $loop = 0; # because new it's adrive, we reset loop
 		$?       = 0; # because it's a new drive, we reset exit status
@@ -245,10 +231,10 @@ sub wareSMARTD {
 sub megaraidSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
 
 	# probe for drives
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $drive (keys %{$input->{drives}}) {
 		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
 		my $loop        = 0; # because it's a new drive, we reset loop
