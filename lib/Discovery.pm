@@ -14,8 +14,6 @@ use XML::Simple;
 
 sub prepare_xml {
 	print "Trying to extract device info from lshw..\n" if ($Configurator::interactive);
-#	my $lshw_bin = `which lshw`; # fetch full path 
-#	chomp $lshw_bin; # remove newline
 
 	my @lshw_output = `$Configurator::lshw_bin -xml -class storage -class disk`; # get xml from lshw command
 	my @xml = @lshw_output[5 .. $#lshw_output]; # remove first 5 rows (header and comments)
@@ -141,16 +139,14 @@ sub prepare_smartd_commands {
 }
 
 sub cached_copy {
-	my $tmp_file = "/tmp/smartd_discovered.txt"; # cache file path 
-	my $expiry_age = "1"; # expire cache after 1 day
 	$Configurator::interactive = 0;
 
-	if ((! -e $tmp_file) || ((-M $tmp_file) > $expiry_age)) { # if file doesn't exist or if it's older than expiry age
+	if ((! -e $Configurator::discovery_cache_file) || ((-M $Configurator::discovery_cache_file) > $Configurator::discovery_cache_expiry_age)) { # if file doesn't exist or if it's older than expiry age
 		my @smartd_commands = prepare_smartd_commands(); # fetch commands
-		write_file($tmp_file, map { "$_\n" } @smartd_commands); # save them to file, and add newlines
+		write_file($Configurator::discovery_cache_file, map { "$_\n" } @smartd_commands); # save them to file, and add newlines
 	}
 
-	my @cached_file = read_file($tmp_file); # read file
+	my @cached_file = read_file($Configurator::discovery_cache_file); # read file
 	chomp (@cached_file);
 
 	return @cached_file if (@cached_file);
@@ -187,7 +183,7 @@ sub nvmeSMARTD {
 sub scsiSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
 	my @sg_devs = `ls /dev/sg*`; # fetch all scsi drives
 
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
@@ -207,7 +203,7 @@ sub scsiSMARTD {
 sub wareSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
 	my @tw_devs = `ls /dev/tw*`; # fetch all virtual drives created by driver
 
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
@@ -231,7 +227,7 @@ sub wareSMARTD {
 sub megaraidSMARTD {
 	my @self;
 	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # fetch smart driver
+	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
 
 	# probe for drives
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
