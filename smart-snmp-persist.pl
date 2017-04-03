@@ -1,19 +1,19 @@
 #!/usr/bin/perl -w
 
+BEGIN {
+        $0 =~ /(.*)\/.*$/; # check if script was started with full path and try to parse path
+        if ($1) { # path found
+		push ( @INC, $1 . "/lib/"); # include full path with "/lib/" in @INC
+        }
+        else {
+		push ( @INC, "lib/"); # not started with full path, include "lib/"
+        }
+}
+
 use strict;
 use warnings;
 use Data::Dumper;
-
-BEGIN {
-	$0 =~ /(.*)\/.*$/; # check if script was started with full path and try to parse path
-	if ($1) { # path found
-		push ( @INC, $1 . "/lib/"); # include full path with "lib/" in @INC
-	}
-	else {
-		push ( @INC, "lib/"); # not started with full path, include only "lib/"
-	}
-}
-
+use Configurator;
 use Discovery;
 use Parser;
 use Persist;
