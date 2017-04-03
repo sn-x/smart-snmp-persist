@@ -45,6 +45,8 @@ yum: yum install
 
 - Prepare SNMP MIB
 
+- Prepare a script that will merge all into one
+
 - Prepare Nagios monitoring script
 
 - Prepare Cacti templates
