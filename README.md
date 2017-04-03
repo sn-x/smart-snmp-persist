@@ -35,7 +35,7 @@ yum: yum install
 
 ## Supported features
 
-**SMART Discovery**: JBODs, supported HBA/controller drivers: megaraid_sas, 3w-9xxx, aacraid, nvme, mpt2sas, ahci, isci
+**SMART Discovery**: JBODs, HBA/controller drivers: megaraid_sas, 3w-9xxx, aacraid, nvme, mpt2sas, ahci, isci
 
 **SMART Parser**: Full table, Small table, Intel NVMe
 

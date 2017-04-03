@@ -4,13 +4,13 @@ package Discovery;
 
 use strict;
 use warnings;
+use Configurator;
 use File::Slurp;
-use Data::Dumper;
 use XML::Simple;
 
-$Discovery::interactive = 1; # enable verbose output. disabled when using cached values
-$Discovery::smartctl    = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
-chomp $Discovery::smartctl; # removes newline from end of string
+#$Discovery::interactive = 1; # enable verbose output. disabled when using cached values
+#$Discovery::smartctl    = `which smartctl`; # find smartctl exectable / can be replaced with full path to smartctl binary
+#chomp $Discovery::smartctl; # removes newline from end of string
 
 my %SMARTD_TRANSLATION = ( # hash contains: key -> kernel driver, value -> smartd driver
 	'megaraid_sas' => 'megaraid',
@@ -27,11 +27,11 @@ my %SMARTD_TRANSLATION = ( # hash contains: key -> kernel driver, value -> smart
 #
 
 sub prepare_xml {
-	print "Trying to extract device info from lshw..\n" if ($Discovery::interactive);
-	my $lshw_bin = `which lshw`; # fetch full path 
-	chomp $lshw_bin; # remove newline
+	print "Trying to extract device info from lshw..\n" if ($Configurator::interactive);
+#	my $lshw_bin = `which lshw`; # fetch full path 
+#	chomp $lshw_bin; # remove newline
 
-	my @lshw_output = `$lshw_bin -xml -class storage -class disk`; # get xml from lshw command
+	my @lshw_output = `$Configurator::lshw_bin -xml -class storage -class disk`; # get xml from lshw command
 	my @xml = @lshw_output[5 .. $#lshw_output]; # remove first 5 rows (header and comments)
 
 	if ($xml[0] !~ "<list>") { # compatibility issue with legacy lshw (everything has to be inside a single block)
@@ -157,7 +157,7 @@ sub prepare_smartd_commands {
 sub cached_copy {
 	my $tmp_file = "/tmp/smartd_discovered.txt"; # cache file path 
 	my $expiry_age = "1"; # expire cache after 1 day
-	$Discovery::interactive = 0;
+	$Configurator::interactive = 0;
 
 	if ((! -e $tmp_file) || ((-M $tmp_file) > $expiry_age)) { # if file doesn't exist or if it's older than expiry age
 		my @smartd_commands = prepare_smartd_commands(); # fetch commands
@@ -179,8 +179,8 @@ sub jbodSMARTD {
 	my ($input) = @_; # get input
 
 	foreach my $drive (keys %{$input->{drives}}) {
-		`$Discovery::smartctl -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
-		push (@self, ($Discovery::smartctl . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512)); # add smart command to array
+		`$Configurator::smartctl_bin -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
+		push (@self, ($Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512)); # add smart command to array
 	}
 	return @self; # return array of smartctl commands
 }
@@ -192,8 +192,8 @@ sub nvmeSMARTD {
 	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
 	chomp $controller ; #remove newline from end of string
 
-	`$Discovery::smartctl . " -a /dev/" . $controller . " -d " . $input->{driver}`; # probe for drive
-	push (@self, ($Discovery::smartctl . " -a /dev/" . $controller . " -d " . $input->{driver})) if ($? != 512); # add smart command to array
+	`$Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver}`; # probe for drive
+	push (@self, ($Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver})) if ($? != 512); # add smart command to array
 
 	return @self; # return array of smartctl commands
 }
@@ -204,14 +204,14 @@ sub scsiSMARTD {
 	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
 	my @sg_devs = `ls /dev/sg*`; # fetch all scsi drives
 
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Discovery::interactive);
+	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $sg_dev (@sg_devs) {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
 
-		`$Discovery::smartctl -a $sg_dev -d $driver`; # probe for drive
+		`$Configurator::smartctl_bin -a $sg_dev -d $driver`; # probe for drive
 		if (($? != 256) && ($? != 512)) { # if smartd succeeded
-			push (@self, ($Discovery::smartctl . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
+			push (@self, ($Configurator::smartctl_bin . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
 		}
 	}
 
@@ -224,16 +224,16 @@ sub wareSMARTD {
 	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
 	my @tw_devs = `ls /dev/tw*`; # fetch all virtual drives created by driver
 
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Discovery::interactive);
+	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $tw_dev (@tw_devs) {
 		my $loop = 0; # because new it's adrive, we reset loop
 		$?       = 0; # because it's a new drive, we reset exit status
 		chomp $tw_dev; # remove newline from end of string
 
 		while (($? != 256) && ($? != 512)) { # work until exist status == 0
-			`$Discovery::smartctl -a $tw_dev -d $driver,$loop`; # probe for drive
+			`$Configurator::smartctl_bin -a $tw_dev -d $driver,$loop`; # probe for drive
 			if (($? != 256) && ($? != 512)) { # if smartd succeeded
-				push (@self, ($Discovery::smartctl . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
+				push (@self, ($Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 		$loop++; # increment $loop
 		}
@@ -248,16 +248,16 @@ sub megaraidSMARTD {
 	my $driver  = $SMARTD_TRANSLATION{$input->{driver}}; # fetch smart driver
 
 	# probe for drives
-	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Discovery::interactive);
+	print "Probing for " . $SMARTD_TRANSLATION{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $drive (keys %{$input->{drives}}) {
 		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
 		my $loop        = 0; # because it's a new drive, we reset loop
 		$?              = 0; # because it's a new drive, we reset exit status
 
 		while (($? != 256) && ($? != 512)) { # exit loop if no drive detected 
-			`$Discovery::smartctl -a $logicalname -d $driver,$loop`; # probe for drive
+			`$Configurator::smartctl_bin -a $logicalname -d $driver,$loop`; # probe for drive
 			if (($? != 256) && ($? != 512)) { # if smartd succeeded
-				push (@self, ($Discovery::smartctl . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
+				push (@self, ($Configurator::smartctl_bin . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 			$loop++; # increment $loop
 		}
@@ -268,9 +268,9 @@ sub megaraidSMARTD {
                         my $loop = 0; # because it's a new drive, we reset loop
                         $?       = 0; # because it's a new drive, we reset exit status
                         while (($? != 256) && ($? != 512)) { # exit loop if no drive detected
-                                `$Discovery::smartctl -a $drive -d $driver,$loop`; # probe for drive
+                                `$Configurator::smartctl_bin -a $drive -d $driver,$loop`; # probe for drive
                                 if (($? != 256) && ($? != 512)) { # if smartd succeeded
-                                        push (@self, ($Discovery::smartctl . " -a " . $drive . " -d " . $driver . "," . $loop)); # add smart command to array
+                                        push (@self, ($Configurator::smartctl_bin . " -a " . $drive . " -d " . $driver . "," . $loop)); # add smart command to array
                                 }
                                 $loop++; # increment $loop
                         }

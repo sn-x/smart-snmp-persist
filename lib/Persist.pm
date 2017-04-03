@@ -9,29 +9,25 @@ use Data::Dumper;
 use XML::Simple;
 use SNMP::Extension::PassPersist;
 
-my $base_oid    = ".1.3.6.1.3.3.";
-
-############################################################
-
 sub persist {
 	my $extsnmp = SNMP::Extension::PassPersist->new(
-	    backend_collect => \&update_tree,
+		backend_collect => \&update_tree,
 	);
 	
 	$extsnmp->run;
 }
 
 sub update_tree {
-    my ($self) = @_;
-	my %tree = tree();
+	my ($self) = @_;
+	my %tree   = tree();
 	
-    $self->add_oid_tree(\%tree);
+	$self->add_oid_tree(\%tree);
 }
 
 sub tree {
 	my $self   = Parser->fetch_parser_cache();
-	my %hash   = %$self;
-	my $unique = 0;
+	my %hash   = %{$self};
+	my $unique = 1;
 	my @array;
 	my $oid;
 			
@@ -47,9 +43,9 @@ sub tree {
 sub unique_oid {
 	my ($hash, $unique) = @_;
 
-	return $base_oid . $unique . ".1" if (%{$hash}{'big_table'});
-	return $base_oid . $unique . ".2" if (%{$hash}{'small_table'});
-	return $base_oid . $unique . ".3" if (%{$hash}{'nvme'});
+	return $Configurator::persist_snmp_base_oid . $unique . ".1" if (%{$hash}{'big_table'});
+	return $Configurator::persist_snmp_base_oid . $unique . ".2" if (%{$hash}{'small_table'});
+	return $Configurator::persist_snmp_base_oid . $unique . ".3" if (%{$hash}{'nvme'});
 
 	return 0;		
 }

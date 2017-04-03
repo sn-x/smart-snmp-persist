@@ -8,22 +8,16 @@ use File::Slurp;
 use Data::Dumper;
 use XML::Simple;
 
-my $cache_file = "/tmp/smartd_parsed_cache.xml";
-my $update_log = "/tmp/smartd_parser_update.log";
-
-########################
-#       FUNCTIONS
-#
-
 sub fetch_parser_cache {
 	my $cached_results = ""; # define empty variable;
 
-	if ( ! -e $cache_file ) {
+	if ( ! -e $Configurator::parser_cache_file ) {
 		update_parser_cache();
 	}
 
-	$cached_results = XMLin($cache_file); # parse XML string
-	system("nohup perl $0 update_cache > " . $update_log . " 2>&1 &"); # update cache in background
+	$cached_results = XMLin($Configurator::parser_cache_file); # parse XML string
+	system("echo `date` >> /tmp/loop");
+	system("nohup perl $0 update_cache > " . $Configurator::parser_update_log . " 2>&1 &"); # update cache in background
 
 	return $cached_results;
 }
@@ -31,10 +25,10 @@ sub fetch_parser_cache {
 sub update_parser_cache {
 	my %parsed_data = parse_smartlog(); # fetch commands
 	my $xml = XMLout(\%parsed_data,
-				NoAttr => 1,
-				RootName=>'smart',
+				NoAttr   => 1,
+				RootName => 'smart',
 			);
-	write_file($cache_file, $xml); # save them to file, and add newlines
+	write_file($Configurator::parser_cache_file, $xml); # save them to file, and add newlines
 }
 
 sub parse_smartlog {
@@ -71,7 +65,7 @@ sub parse_smartlog {
 
 sub fetch_smart_data {
 	my %self;
-	my $loop = 0;
+	my $loop = 1;
 	my @smartd_commands = Discovery->cached_copy();
 	chomp @smartd_commands;
 
@@ -98,8 +92,8 @@ sub parse_smart_big_table {
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^\s*(\d{1,3})\s(\w*\-*\w+\-*\w+)\s*(0[xX][0-9a-fA-F]+)\s*(\d{1,3})\s*(\d{1,3})\s*(\d{1,3})\s*(.{1,8})\s*(\w*)\s*(-|.{1,8})\s*(\d*)|[h]\s*$/) {
-						#	$1 = smart id
-						#	$2 = description
+			                               # $1 = smart id
+			                               # $2 = description
 			$self{"smart_".$1.".1"} = $4;  # 0-100% life left
 			$self{"smart_".$1.".2"} = $5;  # worst
 			$self{"smart_".$1.".3"} = $10; # raw value
@@ -113,17 +107,20 @@ sub parse_smart_small_table {
 	my (@smart_output) = @_;
 	chomp @smart_output;
 	my %self;
+	my $type;
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^(\w+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d*)\s*$/) { 
-						# $1 = read / write / verify
-			$self{"smart_1_".$1} = $2;	# "Errors Corrected by ECC - Fast"
-			$self{"smart_2_".$1} = $3;	# "Errors Corrected by ECC - Delayed"
-			$self{"smart_3_".$1} = $4;	# "Rereads and Rewrites"
-			$self{"smart_4_".$1} = $5;	# "Total errors corrected"
-			$self{"smart_5_".$1} = $6;	# "Correction alghoritm invocation"
-			$self{"smart_6_".$1} = $7;	# "Gigabytes processed [10^9 bytes]"
-			$self{"smart_7_".$1} = $8;	# "Total uncorrected errors"
+			$type = "1" if ($1 == "read");
+			$type = "2" if ($1 == "write");
+			$type = "3" if ($1 == "verify");
+			$self{"smart_1_".$type} = $2;	# "Errors Corrected by ECC - Fast"
+			$self{"smart_2_".$type} = $3;	# "Errors Corrected by ECC - Delayed"
+			$self{"smart_3_".$type} = $4;	# "Rereads and Rewrites"
+			$self{"smart_4_".$type} = $5;	# "Total errors corrected"
+			$self{"smart_5_".$type} = $6;	# "Correction alghoritm invocation"
+			$self{"smart_6_".$type} = $7;	# "Gigabytes processed [10^9 bytes]"
+			$self{"smart_7_".$type} = $8;	# "Total uncorrected errors"
 		}
 	}
 
@@ -136,8 +133,8 @@ sub parse_smart_nvme {
 	my %self;
 
 	foreach my $smart_line (@smart_output) {
-		$self{smart_1} = $1	 if ($smart_line =~ /^Temperature:\s*(\d+).*$/);
-		$self{smart_2} = $1	 if ($smart_line =~ /^Available Spare:\s*(\d+).*$/);
+		$self{smart_1} = $1         if ($smart_line =~ /^Temperature:\s*(\d+).*$/);
+		$self{smart_2} = $1         if ($smart_line =~ /^Available Spare:\s*(\d+).*$/);
 		$self{smart_3} = "100" - $1 if ($smart_line =~ /^Percentage Used:\s*(\d+).*$/);
 	}
 
