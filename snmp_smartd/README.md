@@ -1,4 +1,4 @@
-# smart-snmp-persist
+# snmp_smartd
 SMART prober and parser with SNMP persist output
 
 ## Short about
