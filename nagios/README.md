@@ -1,1 +1,0 @@
-# snmp smartd nagios plugin
