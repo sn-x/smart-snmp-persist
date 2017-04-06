@@ -5,6 +5,8 @@ use warnings;
 use Net::SNMP;
 use Data::Dumper;
 
+my $snmp_timeout = 2; # snmp connect timeout in seconds
+
 if (!$ARGV[2]) {
 	print "$0 snmp_hostname snmp_community snmp_baseoid\n\n";
 	exit 1;
@@ -13,7 +15,6 @@ if (!$ARGV[2]) {
 my $snmp_hostname  = $ARGV[0];
 my $snmp_community = $ARGV[1];
 my $snmp_baseoid   = $ARGV[2];
-my $snmp_timeout   = 2; # snmp connect timeout in seconds
 
 print_results();
 
@@ -34,7 +35,6 @@ sub find_drives {
 	my $results;
 
 	while (%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"}) {
-		#print Dumper(%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"});
 		$found++;
 		$drive++;
 	}
@@ -50,14 +50,13 @@ sub fetch_snmp_table {
 			-retries   => 0
 	);
 
-	if(!$session) {
-		print "Couldn't establish SNMP session. Check input arguments.\n\n";
+	if ($error) {
+		print $error;
 		exit(1);
 	}
 
-	if ($session->error()) {
-		print $session->error();
-		exit(1);
+	if (!$session) {
+		problem("PROBLEM", "Couldn't establish SNMP session. Check hostname.");
 	}
 
         my $results = $session->get_table(
@@ -66,6 +65,21 @@ sub fetch_snmp_table {
 
 	$session->close;
 
+        if (!$results) {
+                problem("PROBLEM", "Unable to retrieve SNMP table. Check community and oid.");
+        }
+
 	return $results;
 }
 
+sub problem {
+	my ($severity, $message) = @_;
+
+	print $severity . ": " . $message . "\n";
+
+	if ($severity =~ "WARNING") {
+		exit 1
+	}
+
+	exit 2;
+}
