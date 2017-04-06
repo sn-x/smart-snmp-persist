@@ -21,10 +21,7 @@ print_results();
 sub print_results {
 	my $drives = find_drives();
 
-	if ($drives) {
-		print "OK: Discovered $drives drives\n"
-	}
-
+	print "OK: Discovered $drives drives\n" if ($drives);
 	exit(0);
 }
 
@@ -32,7 +29,6 @@ sub find_drives {
 	my $snmp_data = fetch_snmp_table();
 	my $drive     = 1;
 	my $found     = 0;
-	my $results;
 
 	while (%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"}) {
 		$found++;
@@ -50,24 +46,15 @@ sub fetch_snmp_table {
 			-retries   => 0
 	);
 
-	if ($error) {
-		print $error;
-		exit(1);
-	}
-
-	if (!$session) {
-		problem("PROBLEM", "Couldn't establish SNMP session. Check hostname.");
-	}
+	problem("PROBLEM", $error) if ($error);
+	problem("PROBLEM", "Couldn't establish SNMP session. Check hostname.") if (!$session);
 
         my $results = $session->get_table(
                         -baseoid => $snmp_baseoid
         );
 
 	$session->close;
-
-        if (!$results) {
-                problem("PROBLEM", "Unable to retrieve SNMP table. Check community and oid.");
-        }
+	problem("PROBLEM", "Unable to retrieve SNMP table. Check community and oid.") if (!$results);
 
 	return $results;
 }
@@ -76,10 +63,6 @@ sub problem {
 	my ($severity, $message) = @_;
 
 	print $severity . ": " . $message . "\n";
-
-	if ($severity =~ "WARNING") {
-		exit 1
-	}
-
+	exit 1 if ($severity =~ "WARNING");
 	exit 2;
 }
