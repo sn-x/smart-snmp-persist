@@ -21,8 +21,8 @@ print_results();
 sub print_results {
 	my $drives = find_drives();
 
-	print "OK: Discovered $drives drives\n" if ($drives);
-	exit(0);
+	ok("Discovered " . $drives . " drives") if ($drives);
+	problem("PROBLEM", "No drives discovered");
 }
 
 sub find_drives {
@@ -59,10 +59,17 @@ sub fetch_snmp_table {
 	return $results;
 }
 
+sub ok {
+	my ($message) = @_;
+
+	print "OK: " . $message . "\n";
+	exit(0);
+}
+
 sub problem {
 	my ($severity, $message) = @_;
 
 	print $severity . ": " . $message . "\n";
-	exit 1 if ($severity =~ "WARNING");
-	exit 2;
+	exit(1) if ($severity =~ "WARNING");
+	exit(2);
 }
