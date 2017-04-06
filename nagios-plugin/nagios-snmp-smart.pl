@@ -5,11 +5,19 @@ use warnings;
 use Net::SNMP;
 use Data::Dumper;
 
-my $oid='.1.3.6.1.3.3';
+if (!$ARGV[2]) {
+	print "$0 snmp_hostname snmp_community snmp_baseoid\n\n";
+	exit 1;
+}
 
-nagios_output();
+my $snmp_hostname  = $ARGV[0];
+my $snmp_community = $ARGV[1];
+my $snmp_baseoid   = $ARGV[2];
+my $snmp_timeout   = 2; # snmp connect timeout in seconds
 
-sub nagios_output {
+print_results();
+
+sub print_results {
 	my $drives = find_drives();
 
 	if ($drives) {
@@ -25,8 +33,8 @@ sub find_drives {
 	my $found     = 0;
 	my $results;
 
-	while (%{$snmp_data}{$oid.".".$drive.".1.2"}) {
-		#print Dumper(%{$snmp_data}{$oid.".".$drive.".1.2"});
+	while (%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"}) {
+		#print Dumper(%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"});
 		$found++;
 		$drive++;
 	}
@@ -35,20 +43,29 @@ sub find_drives {
 }
 
 sub fetch_snmp_table {
-	my $snmp = Net::SNMP->session(
-	                        -hostname  => '127.0.0.1',
-	                        -community => 'public',
+	my ($session, $error) = Net::SNMP->session(
+			-hostname  => $snmp_hostname,
+			-community => $snmp_community,
+			-timeout   => $snmp_timeout,
+			-retries   => 0
 	);
 
-	my $var = $snmp->get_table( -baseoid => $oid);
-
-	if ($snmp->error) {
-		print $snmp->error;
+	if(!$session) {
+		print "Couldn't establish SNMP session. Check input arguments.\n\n";
 		exit(1);
 	}
 
-	$snmp->close;
+	if ($session->error()) {
+		print $session->error();
+		exit(1);
+	}
 
-	return $var;
+        my $results = $session->get_table(
+                        -baseoid => $snmp_baseoid
+        );
+
+	$session->close;
+
+	return $results;
 }
 
