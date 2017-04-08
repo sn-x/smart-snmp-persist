@@ -43,9 +43,9 @@ sub tree {
 sub unique_oid {
 	my ($hash, $unique) = @_;
 
-	return $Configurator::persist_snmp_base_oid . $unique . ".1" if (%{$hash}{'big_table'});
-	return $Configurator::persist_snmp_base_oid . $unique . ".2" if (%{$hash}{'small_table'});
-	return $Configurator::persist_snmp_base_oid . $unique . ".3" if (%{$hash}{'nvme'});
+	return $Configurator::persist_snmp_base_oid . $unique . ".1" if (%{$hash}{'structure'} =~ "big_table");
+	return $Configurator::persist_snmp_base_oid . $unique . ".2" if (%{$hash}{'structure'} =~ "small_table");
+	return $Configurator::persist_snmp_base_oid . $unique . ".3" if (%{$hash}{'structure'} =~ "nvme");
 
 	return 0;		
 }

@@ -36,31 +36,39 @@ sub parse_smartlog {
 	my %smart_data = fetch_smart_data();
 
 	for my $disk (keys %smart_data) {
+		$self{$disk}           = parse_smartlog_details($smart_data{$disk}{data});
 		$self{$disk}{exitcode} = $smart_data{$disk}{exitcode};
-		
-		for my $smart_output_line (@{$smart_data{$disk}{data}}) {
-			$self{$disk}{vendor}      = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
-			$self{$disk}{model}       = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
-			$self{$disk}{serial}      = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
-
-			if ($smart_output_line =~ "SMART Attributes Data Structure revision number") {
-				$self{$disk}{big_table}   = "found";
-				$self{$disk}{attributes}  = parse_smart_big_table(@{$smart_data{$disk}{data}})
-			}
-
-			if ($smart_output_line =~ "Error counter log:") {
-				$self{$disk}{small_table} = "found";
-				$self{$disk}{attributes}  = parse_smart_small_table(@{$smart_data{$disk}{data}})
-			}
-
-			if ($smart_output_line =~ "SMART/Health Information") {
-				$self{$disk}{nvme} = "found";
-				$self{$disk}{attributes}  = parse_smart_nvme(@{$smart_data{$disk}{data}})
-			}
-		}
 	}
 
 	return %self;
+}
+
+sub parse_smartlog_details {
+	my ($array, $disk) = @_;
+	my %self;
+
+	for my $smart_output_line (@{$array}) {
+		$self{vendor}      = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
+		$self{model}       = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
+		$self{serial}      = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
+
+		if ($smart_output_line =~ "SMART Attributes Data Structure revision number") {
+			$self{structure}   = "big_table";
+			$self{attributes}  = parse_smart_big_table(@{$array})
+		}
+
+		if ($smart_output_line =~ "Error counter log:") {
+			$self{structure}   = "small_table";
+			$self{attributes}  = parse_smart_small_table(@{$array})
+		}
+
+		if ($smart_output_line =~ "SMART/Health Information") {
+			$self{structure}   = "nvme";
+			$self{attributes}  = parse_smart_nvme(@{$array})
+		}
+	}
+
+	return \%self;
 }
 
 sub fetch_smart_data {

@@ -228,8 +228,16 @@ sub megaraidSMARTD {
 	my @self;
 	my ($input) = @_; # get input
 	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
+	my $loop    = 0;
 
 	# probe for drives
+        if(!(keys %{$input->{drives}})) { # if array with drives is empty
+                foreach my $logicalname ("/dev/sda".."/dev/sdz") { # try these drives
+			$input->{drives}{$loop}{logicalname} = $logicalname;
+			$loop++;
+		}
+	}
+
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $drive (keys %{$input->{drives}}) {
 		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
@@ -244,20 +252,6 @@ sub megaraidSMARTD {
 			$loop++; # increment $loop
 		}
 	}
-
-        if(!(keys %{$input->{drives}})) { # if array with drives is empty
-                foreach my $drive ("/dev/sda".."/dev/sdz") { # try these drives
-                        my $loop = 0; # because it's a new drive, we reset loop
-                        $?       = 0; # because it's a new drive, we reset exit status
-                        while (($? != 256) && ($? != 512)) { # exit loop if no drive detected
-                                `$Configurator::smartctl_bin -a $drive -d $driver,$loop`; # probe for drive
-                                if (($? != 256) && ($? != 512)) { # if smartd succeeded
-                                        push (@self, ($Configurator::smartctl_bin . " -a " . $drive . " -d " . $driver . "," . $loop)); # add smart command to array
-                                }
-                                $loop++; # increment $loop
-                        }
-                }
-        }
 
 	return @self; # return array of smartctl commands
 }
