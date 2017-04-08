@@ -16,7 +16,6 @@ sub fetch_parser_cache {
 	}
 
 	$cached_results = XMLin($Configurator::parser_cache_file); # parse XML string
-	system("echo `date` >> /tmp/loop");
 	system("nohup perl $0 update_cache > " . $Configurator::parser_update_log . " 2>&1 &"); # update cache in background
 
 	return $cached_results;
@@ -28,6 +27,7 @@ sub update_parser_cache {
 				NoAttr   => 1,
 				RootName => 'smart',
 			);
+
 	write_file($Configurator::parser_cache_file, $xml); # save them to file, and add newlines
 }
 

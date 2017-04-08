@@ -9,8 +9,8 @@ use Data::Dumper;
 use XML::Simple;
 use SNMP::Extension::PassPersist;
 
-sub persist {
-	my $extsnmp = SNMP::Extension::PassPersist->new(
+sub pass {
+	my $extsnmp     = SNMP::Extension::PassPersist->new(
 		backend_collect => \&update_tree,
 	);
 	
@@ -43,9 +43,9 @@ sub tree {
 sub unique_oid {
 	my ($hash, $unique) = @_;
 
-	return $Configurator::persist_snmp_base_oid . $unique . ".1" if (%{$hash}{'structure'} =~ "big_table");
-	return $Configurator::persist_snmp_base_oid . $unique . ".2" if (%{$hash}{'structure'} =~ "small_table");
-	return $Configurator::persist_snmp_base_oid . $unique . ".3" if (%{$hash}{'structure'} =~ "nvme");
+	return $Configurator::persist_snmp_base_oid . "." . $unique . ".1" if (%{$hash}{'structure'} =~ "big_table");
+	return $Configurator::persist_snmp_base_oid . "." . $unique . ".2" if (%{$hash}{'structure'} =~ "small_table");
+	return $Configurator::persist_snmp_base_oid . "." . $unique . ".3" if (%{$hash}{'structure'} =~ "nvme");
 
 	return 0;		
 }
