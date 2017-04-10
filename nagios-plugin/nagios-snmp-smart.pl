@@ -26,11 +26,12 @@ sub print_results {
 }
 
 sub find_drives {
-	my $snmp_data = fetch_snmp_table();
+	my $snmp_data_ref  = fetch_snmp_table();
+	my %snmp_data_hash = %{$snmp_data_ref};
 	my $drive     = 1;
 	my $found     = 0;
 
-	while (%{$snmp_data}{$snmp_baseoid.".".$drive.".1.2"}) {
+	while ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"}) {
 		$found++;
 		$drive++;
 	}
