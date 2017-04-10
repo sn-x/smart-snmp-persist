@@ -80,13 +80,13 @@ sub startup {
 
 	print "Use one of the below command line arguments:\n";
 	print "\n";
-	print "snmp_pass <baseoid>  -       snmp pass, <baseoid> must match oid in snmpd.conf\n";
-	print "smart_parsed         -       print to stdout\n";
-	print "smart_cached         -       hourly cached results\n";
-	print "discovered_devices   -       filtered devices list\n";
-	print "discovered_commands  -       smartd commands\n";
-	print "discovered_cached    -       daily cached results\n";
-	print "update_cache         -       internal call to rebuild cache\n";
+	print "snmp_pass <baseoid>  -    <baseoid> must match oid in snmpd.conf\n";
+	print "smart_parsed         -    print to stdout\n";
+	print "smart_cached         -    hourly cached results\n";
+	print "discovered_devices   -    filtered devices list\n";
+	print "discovered_commands  -    smartd commands\n";
+	print "discovered_cached    -    daily cached results\n";
+	print "update_cache         -    internal call to rebuild cache\n";
 	exit;
 }
 
