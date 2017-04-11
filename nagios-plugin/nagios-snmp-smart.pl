@@ -81,8 +81,9 @@ sub check_for_disk_problems {
         until ($drive > $drives) {
 		my $oid = $snmp_baseoid . "." . $drive . ".1";
 
-		return check_exit_codes($snmp_data_hash{$oid})  if (check_exit_codes($snmp_data_hash{$oid}));
-		return check_smart_thold($snmp_data_hash{$oid}) if (check_smart_thold($snmp_data_hash{$oid}));
+		return check_exit_codes($snmp_data_hash{$oid . ".100"})  if (check_exit_codes($snmp_data_hash{$oid . ".100"}));
+		return check_smart_thold($snmp_data_hash{$oid . ".101"}) if (check_smart_thold($snmp_data_hash{$oid . ".101"}));
+
                 $drive++;
         }
 
@@ -99,7 +100,7 @@ sub check_exit_codes {
 		$self{info}     = "Non-zero return code found. Check additional info in Nagios.";
 	}
 
-	return %self if (%self);
+	return \%self if (%self);
 }
 
 sub check_smart_thold {
