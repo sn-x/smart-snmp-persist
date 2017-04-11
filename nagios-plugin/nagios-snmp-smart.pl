@@ -25,7 +25,7 @@ sub print_results {
 	problem("PROBLEM", "No drives discovered", "") if (!$drives);
 
 	my $secondary_info = secondary_info($snmp_data_ref,$drives);
-	my $problems_ref = check_for_disk_problems($snmp_data_ref, $drives);
+	my $problems_ref   = check_for_disk_problems($snmp_data_ref, $drives);
 
 	if ($problems_ref) {
 		my %problems_hash = %{$problems_ref};
