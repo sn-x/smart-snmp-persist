@@ -21,13 +21,18 @@ print_results();
 sub print_results {
 	my $snmp_data_ref  = fetch_snmp_table();
 	my $drives         = find_drives($snmp_data_ref);
-	my $extended_info  = extended_info($snmp_data_ref,$drives);
-	my $main_info      = "";
 
-	$main_info .= "Discovered drives: " . $drives . ". " if ($drives);
+	problem("PROBLEM", "No drives discovered", "") if (!$drives);
 
-	ok($main_info, $extended_info) if ($main_info);
-	problem("PROBLEM", "No drives discovered");
+	my $secondary_info = secondary_info($snmp_data_ref,$drives);
+	my $problems_ref = check_for_disk_problems($snmp_data_ref, $drives);
+
+	if ($problems_ref) {
+		my %problems_hash = %{$problems_ref};
+	        problem($problems_hash{severity}, $problems_hash{info}, $secondary_info);
+	}
+
+	ok("Number of checked drives: " . $drives . ".\n", $secondary_info) if ($drives);
 }
 
 sub find_drives {
@@ -36,7 +41,7 @@ sub find_drives {
 	my $drive           = 1;
 	my $found           = 0;
 
-	while ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"}) {
+	while ($snmp_data_hash{$snmp_baseoid . "." . $drive . ".1.2"}) {
 		$found++;
 		$drive++;
 	}
@@ -44,26 +49,63 @@ sub find_drives {
 	return $found;
 }
 
-sub extended_info {
+sub secondary_info {
 	my ($snmp_data_ref,$drives) = @_;
 	my %snmp_data_hash          = %{$snmp_data_ref};
-	my $extended_info           = "";
+	my $secondary_info          = "";
 	my $drive                   = 1;
 
 	return "\n" if (!$drives);
-	
+
+	my $oid = $snmp_baseoid . "." . $drive . ".1";	
 	until ($drive > $drives) {
-		$extended_info .= "Model: "           . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.1"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.1"});
-		$extended_info .= "Serial: "          . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"});
-		$extended_info .= "Vendor: "          . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.3"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.3"});
-		$extended_info .= "Size: "            . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.4"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.4"});
-		$extended_info .= "SMART Exit code: " . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.100"} . "\n";
-		$extended_info .= "\n";
+		$secondary_info .= "Model:\t\t"     . $snmp_data_hash{$oid . ".1"}   . "\n" if ($snmp_data_hash{$oid . ".1"});
+		$secondary_info .= "Serial:\t\t"    . $snmp_data_hash{$oid . ".2"}   . "\n" if ($snmp_data_hash{$oid . ".2"});
+		$secondary_info .= "Vendor:\t\t"    . $snmp_data_hash{$oid . ".3"}   . "\n" if ($snmp_data_hash{$oid . ".3"});
+		$secondary_info .= "Size:\t\t"      . $snmp_data_hash{$oid . ".4"}   . "\n" if ($snmp_data_hash{$oid . ".4"});
+		$secondary_info .= "Return code:\t" . $snmp_data_hash{$oid . ".100"} . "\n";
+		$secondary_info .= "\n";
 		$drive++;
 	}
 
-	return $extended_info;
+	return $secondary_info;
 }
+
+sub check_for_disk_problems {
+	my ($snmp_data_ref, $drives) = @_;
+	my %snmp_data_hash           = %{$snmp_data_ref};
+	my $drive                    = 1;
+
+        return "" if (!$drives);
+
+        until ($drive > $drives) {
+		my $oid = $snmp_baseoid . "." . $drive . ".1";
+
+		return check_exit_codes($snmp_data_hash{$oid})  if (check_exit_codes($snmp_data_hash{$oid}));
+		return check_smart_thold($snmp_data_hash{$oid}) if (check_smart_thold($snmp_data_hash{$oid}));
+                $drive++;
+        }
+
+        return "";
+
+}
+
+sub check_exit_codes {
+	my ($exit_code) = @_;
+	my %self;
+
+	if ($exit_code) {
+		$self{severity} = "WARNING";
+		$self{info}     = "Non-zero return code found. Check additional info in Nagios.";
+	}
+
+	return %self if (%self);
+}
+
+sub check_smart_thold {
+
+}
+
 sub fetch_snmp_table {
 	my ($session, $error) = Net::SNMP->session(
 			-hostname  => $snmp_hostname,
@@ -86,17 +128,20 @@ sub fetch_snmp_table {
 }
 
 sub ok {
-	my ($main_info, $extended_info) = @_;
+	my ($primary_info, $secondary_info) = @_;
 
-	print "OK: " . $main_info . "\n";
-	print $extended_info;
+	print "OK: " . $primary_info . "\n";
+	print $secondary_info;
+
 	exit(0);
 }
 
 sub problem {
-	my ($severity, $message) = @_;
+	my ($severity, $message, $secondary_info) = @_;
 
 	print $severity . ": " . $message . "\n";
+	print $secondary_info;
+
 	exit(1) if ($severity =~ "WARNING");
 	exit(2);
 }
