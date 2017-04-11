@@ -47,14 +47,6 @@ yum: yum install
 
 ## Roadmap
 
-- Prepare SNMP MIB
-
-- Prepare a script that will merge all into one
-
-- Prepare Nagios monitoring script
-
-- Prepare Cacti templates
-
 - Extend discovery support for additional drivers
 
 - Extend parser support for additional SMART outputs
