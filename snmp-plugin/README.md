@@ -3,13 +3,17 @@ SMART prober and parser with SNMP persist output
 
 ## Short about
 
+###### lib/Configurator.pm
+
+Configuration file.
+
 ###### lib/Parser.pm
 
-Parses smartctl output
+Parses smartctl output.
 
 ###### lib/Discovery.pm
 
-Discoveres SMART capable disk drives
+Discoveres SMART capable disk drives.
 
 ###### lib/Persist.pm
 

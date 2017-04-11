@@ -19,17 +19,22 @@ my $snmp_baseoid   = $ARGV[2];
 print_results();
 
 sub print_results {
-	my $drives = find_drives();
+	my $snmp_data_ref  = fetch_snmp_table();
+	my $drives         = find_drives($snmp_data_ref);
+	my $extended_info  = extended_info($snmp_data_ref,$drives);
+	my $main_info      = "";
 
-	ok("Discovered " . $drives . " drives") if ($drives);
+	$main_info .= "Discovered drives: " . $drives . ". " if ($drives);
+
+	ok($main_info, $extended_info) if ($main_info);
 	problem("PROBLEM", "No drives discovered");
 }
 
 sub find_drives {
-	my $snmp_data_ref  = fetch_snmp_table();
-	my %snmp_data_hash = %{$snmp_data_ref};
-	my $drive     = 1;
-	my $found     = 0;
+	my ($snmp_data_ref) = @_;
+	my %snmp_data_hash  = %{$snmp_data_ref};
+	my $drive           = 1;
+	my $found           = 0;
 
 	while ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"}) {
 		$found++;
@@ -39,6 +44,26 @@ sub find_drives {
 	return $found;
 }
 
+sub extended_info {
+	my ($snmp_data_ref,$drives) = @_;
+	my %snmp_data_hash          = %{$snmp_data_ref};
+	my $extended_info           = "";
+	my $drive                   = 1;
+
+	return "\n" if (!$drives);
+	
+	until ($drive > $drives) {
+		$extended_info .= "Model: "           . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.1"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.1"});
+		$extended_info .= "Serial: "          . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.2"});
+		$extended_info .= "Vendor: "          . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.3"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.3"});
+		$extended_info .= "Size: "            . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.4"}   . "\n" if ($snmp_data_hash{$snmp_baseoid.".".$drive.".1.4"});
+		$extended_info .= "SMART Exit code: " . $snmp_data_hash{$snmp_baseoid.".".$drive.".1.100"} . "\n";
+		$extended_info .= "\n";
+		$drive++;
+	}
+
+	return $extended_info;
+}
 sub fetch_snmp_table {
 	my ($session, $error) = Net::SNMP->session(
 			-hostname  => $snmp_hostname,
@@ -61,9 +86,10 @@ sub fetch_snmp_table {
 }
 
 sub ok {
-	my ($message) = @_;
+	my ($main_info, $extended_info) = @_;
 
-	print "OK: " . $message . "\n";
+	print "OK: " . $main_info . "\n";
+	print $extended_info;
 	exit(0);
 }
 
