@@ -54,11 +54,12 @@ sub secondary_info {
 	my %snmp_data_hash          = %{$snmp_data_ref};
 	my $secondary_info          = "";
 	my $drive                   = 1;
+	my $oid;
 
 	return "\n" if (!$drives);
 
-	my $oid = $snmp_baseoid . "." . $drive . ".1";	
 	until ($drive > $drives) {
+		$oid = $snmp_baseoid . "." . $drive . ".1";
 		$secondary_info .= "Model:\t\t"     . $snmp_data_hash{$oid . ".1"}   . "\n" if ($snmp_data_hash{$oid . ".1"});
 		$secondary_info .= "Serial:\t\t"    . $snmp_data_hash{$oid . ".2"}   . "\n" if ($snmp_data_hash{$oid . ".2"});
 		$secondary_info .= "Vendor:\t\t"    . $snmp_data_hash{$oid . ".3"}   . "\n" if ($snmp_data_hash{$oid . ".3"});
@@ -112,6 +113,7 @@ sub fetch_snmp_table {
 			-hostname  => $snmp_hostname,
 			-community => $snmp_community,
 			-timeout   => $snmp_timeout,
+			-version   => 'snmpv2c',
 			-retries   => 0
 	);
 
@@ -141,7 +143,7 @@ sub problem {
 	my ($severity, $message, $secondary_info) = @_;
 
 	print $severity . ": " . $message . "\n";
-	print $secondary_info;
+	print $secondary_info if ($secondary_info);
 
 	exit(1) if ($severity =~ "WARNING");
 	exit(2);
