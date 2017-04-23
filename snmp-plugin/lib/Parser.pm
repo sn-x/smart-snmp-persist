@@ -122,13 +122,13 @@ sub parse_smart_small_table {
 			$type = "1" if ($1 == "read");
 			$type = "2" if ($1 == "write");
 			$type = "3" if ($1 == "verify");
-			$self{"smart_1_".$type} = $2;	# "Errors Corrected by ECC - Fast"
-			$self{"smart_2_".$type} = $3;	# "Errors Corrected by ECC - Delayed"
-			$self{"smart_3_".$type} = $4;	# "Rereads and Rewrites"
-			$self{"smart_4_".$type} = $5;	# "Total errors corrected"
-			$self{"smart_5_".$type} = $6;	# "Correction alghoritm invocation"
-			$self{"smart_6_".$type} = $7;	# "Gigabytes processed [10^9 bytes]"
-			$self{"smart_7_".$type} = $8;	# "Total uncorrected errors"
+			$self{"smart_1.".$type} = $2;	# "Errors Corrected by ECC - Fast"
+			$self{"smart_2.".$type} = $3;	# "Errors Corrected by ECC - Delayed"
+			$self{"smart_3.".$type} = $4;	# "Rereads and Rewrites"
+			$self{"smart_4.".$type} = $5;	# "Total errors corrected"
+			$self{"smart_5.".$type} = $6;	# "Correction alghoritm invocation"
+			$self{"smart_6.".$type} = $7;	# "Gigabytes processed [10^9 bytes]"
+			$self{"smart_7.".$type} = $8;	# "Total uncorrected errors"
 		}
 	}
 
