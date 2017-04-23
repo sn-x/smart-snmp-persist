@@ -119,9 +119,12 @@ sub parse_smart_small_table {
 
 	for my $smart_line (@smart_output) {
 		if ($smart_line =~ /^(\w+):\s*(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+\.\d+)\s+(\d*)\s*$/) { 
-			$type = "1" if ($1 =~ "read");
-			$type = "2" if ($1 =~ "write");
-			$type = "3" if ($1 =~ "verify");
+                        if ($1) {
+                                my $type_name = $1;
+                                $type = "1" if ($type_name =~ "read");
+                                $type = "2" if ($type_name =~ "write");
+                                $type = "3" if ($type_name =~ "verify");
+                        }
 			$self{"smart_1.".$type} = $2;	# "Errors Corrected by ECC - Fast"
 			$self{"smart_2.".$type} = $3;	# "Errors Corrected by ECC - Delayed"
 			$self{"smart_3.".$type} = $4;	# "Rereads and Rewrites"

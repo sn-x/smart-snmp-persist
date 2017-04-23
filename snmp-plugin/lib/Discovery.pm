@@ -162,7 +162,7 @@ sub jbodSMARTD {
 
 	foreach my $drive (keys %{$input->{drives}}) {
 		`$Configurator::smartctl_bin -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
-		push (@self, ($Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512)); # add smart command to array
+		push (@self, ($Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname})) if ($? > 1024); # add smart command to array
 	}
 	return @self; # return array of smartctl commands
 }
@@ -192,7 +192,7 @@ sub scsiSMARTD {
 		chomp $sg_dev; # remove newline from end of string
 
 		`$Configurator::smartctl_bin -a $sg_dev -d $driver`; # probe for drive
-		if (($? != 256) && ($? != 512)) { # if smartd succeeded
+		if ($? > 1024) { # if smartd succeeded
 			push (@self, ($Configurator::smartctl_bin . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
 		}
 	}
@@ -212,9 +212,9 @@ sub wareSMARTD {
 		$?       = 0; # because it's a new drive, we reset exit status
 		chomp $tw_dev; # remove newline from end of string
 
-		while (($? != 256) && ($? != 512)) { # work until exist status == 0
+		while ($? > 1024) { # work until exist status == 0
 			`$Configurator::smartctl_bin -a $tw_dev -d $driver,$loop`; # probe for drive
-			if (($? != 256) && ($? != 512)) { # if smartd succeeded
+			if ($? > 1024) { # if smartd succeeded
 				push (@self, ($Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 		$loop++; # increment $loop
@@ -244,9 +244,9 @@ sub megaraidSMARTD {
 		my $loop        = 0; # because it's a new drive, we reset loop
 		$?              = 0; # because it's a new drive, we reset exit status
 
-		while (($? != 256) && ($? != 512)) { # exit loop if no drive detected 
+		while ($? > 1024) { # exit loop if no drive detected 
 			`$Configurator::smartctl_bin -a $logicalname -d $driver,$loop`; # probe for drive
-			if (($? != 256) && ($? != 512)) { # if smartd succeeded
+			if ($? > 1024) { # if smartd succeeded
 				push (@self, ($Configurator::smartctl_bin . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
 			}
 			$loop++; # increment $loop
