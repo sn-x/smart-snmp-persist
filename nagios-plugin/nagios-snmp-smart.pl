@@ -41,7 +41,7 @@ sub find_drives {
 	my $drive           = 1;
 	my $found           = 0;
 
-	while ($snmp_data_hash{$snmp_baseoid . "." . $drive . ".1.2"}) {
+	while ($snmp_data_hash{$snmp_baseoid . "." . $drive . ".2"}) {
 		$found++;
 		$drive++;
 	}
