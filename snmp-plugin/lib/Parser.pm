@@ -48,9 +48,10 @@ sub parse_smartlog_details {
 	my %self;
 
 	for my $smart_output_line (@{$array}) {
-		$self{vendor}      = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
-		$self{model}       = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
-		$self{serial}      = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
+		$self{vendor} = parse_smart_vendor($smart_output_line) if parse_smart_vendor($smart_output_line);
+		$self{model}  = parse_smart_model($smart_output_line)  if parse_smart_model($smart_output_line);
+		$self{serial} = parse_smart_serial($smart_output_line) if parse_smart_serial($smart_output_line);
+		$self{size}   = parse_smart_size($smart_output_line)   if parse_smart_size($smart_output_line);
 
 		if ($smart_output_line =~ "SMART Attributes Data Structure revision number") {
 			$self{structure}   = "big_table";
@@ -171,6 +172,13 @@ sub parse_smart_serial {
 	my ($self) = @_;
 
 	return $1 if ($self =~ /^Serial number:\s*(\w.*)$/i);
+}
+
+sub parse_smart_size {
+	my ($self) = @_;
+
+	return $1 if ($self =~ /^User Capacity:\s*(\w.*)$/i);
+	return $1 if ($self =~ /^Size:\s*(\w.*)$/i);
 }
 
 return 1;

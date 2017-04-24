@@ -59,13 +59,13 @@ sub secondary_info {
 	return "\n" if (!$drives);
 
 	until ($drive > $drives) {
-		$oid = $snmp_baseoid . "." . $drive . ".1";
+		$oid = $snmp_baseoid . "." . $drive;
 		$secondary_info .= "Model:\t\t"     . $snmp_data_hash{$oid . ".1"}   . "\n" if ($snmp_data_hash{$oid . ".1"});
 		$secondary_info .= "Serial:\t\t"    . $snmp_data_hash{$oid . ".2"}   . "\n" if ($snmp_data_hash{$oid . ".2"});
 		$secondary_info .= "Vendor:\t\t"    . $snmp_data_hash{$oid . ".3"}   . "\n" if ($snmp_data_hash{$oid . ".3"});
 		$secondary_info .= "Size:\t\t"      . $snmp_data_hash{$oid . ".4"}   . "\n" if ($snmp_data_hash{$oid . ".4"});
 		$secondary_info .= "Return code:\t" . $snmp_data_hash{$oid . ".100"} . "\n";
-		$secondary_info .= "\n";
+		$secondary_info .= "\n ";
 		$drive++;
 	}
 
@@ -80,7 +80,7 @@ sub check_for_disk_problems {
         return "" if (!$drives);
 
         until ($drive > $drives) {
-		my $oid = $snmp_baseoid . "." . $drive . ".1";
+		my $oid = $snmp_baseoid . "." . $drive;
 
 		return check_exit_codes($snmp_data_hash{$oid . ".100"})  if (check_exit_codes($snmp_data_hash{$oid . ".100"}));
 		return check_smart_thold($snmp_data_hash{$oid . ".101"}) if (check_smart_thold($snmp_data_hash{$oid . ".101"}));

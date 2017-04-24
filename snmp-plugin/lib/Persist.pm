@@ -10,10 +10,10 @@ use XML::Simple;
 use SNMP::Extension::PassPersist;
 
 sub pass {
-	my $extsnmp     = SNMP::Extension::PassPersist->new(
+	my $extsnmp = SNMP::Extension::PassPersist->new(
 		backend_collect => \&update_tree,
 	);
-	
+
 	$extsnmp->run;
 }
 
@@ -32,22 +32,12 @@ sub tree {
 	my $oid;
 			
 	foreach my $drive (keys %hash) {
-		$oid = unique_oid($hash{$drive}, $unique);
+		$oid = $Configurator::persist_snmp_base_oid . "." . $unique;
 		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{attributes};
 		$unique++;
 	}
 
 	return @array;
-}
-
-sub unique_oid {
-	my ($hash, $unique) = @_;
-
-	return $Configurator::persist_snmp_base_oid . "." . $unique . ".1" if (%{$hash}{'structure'} =~ "big_table");
-	return $Configurator::persist_snmp_base_oid . "." . $unique . ".2" if (%{$hash}{'structure'} =~ "small_table");
-	return $Configurator::persist_snmp_base_oid . "." . $unique . ".3" if (%{$hash}{'structure'} =~ "nvme");
-
-	return 0;		
 }
 
 sub oid_tree {
@@ -58,6 +48,7 @@ sub oid_tree {
 	push(@array, ($oid . ".1"   => ['string',  $device{'model'}]))  if $device{'model'};
 	push(@array, ($oid . ".2"   => ['string',  $device{'serial'}])) if $device{'serial'};
 	push(@array, ($oid . ".3"   => ['string',  $device{'vendor'}])) if $device{'vendor'};
+	push(@array, ($oid . ".4"   => ['string',  $device{'size'}]))   if $device{'size'};
 	push(@array, ($oid . ".100" => ['integer', $device{'exitcode'}]));
 
 	for my $smart_id (keys %{$device{'attributes'}}) {
