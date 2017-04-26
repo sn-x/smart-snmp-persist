@@ -146,10 +146,24 @@ sub cached_copy {
 		write_file($Configurator::discovery_cache_file, map { "$_\n" } @smartd_commands); # save them to file, and add newlines
 	}
 
-	my @cached_file = read_file($Configurator::discovery_cache_file); # read file
-	chomp (@cached_file);
+	my @cached_info = read_file($Configurator::discovery_cache_file); # read file
 
-	return @cached_file if (@cached_file);
+	if (@cached_info) {
+		return sort_cache_info(@cached_info);
+	}
+
+	print "ERROR: Unable to create or read cache file.\n";
+	exit(2);
+}
+
+sub sort_cache_info {
+	my (@cached_info) = @_;
+
+	chomp (@cached_info);
+	my %cached_info_hash   = map { $_, 1 } @cached_info;
+	@cached_info = sort keys %cached_info_hash;	
+
+	return @cached_info;
 }
 
 #########################################

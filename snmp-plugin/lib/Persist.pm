@@ -30,6 +30,11 @@ sub tree {
 	my $unique = 1;
 	my @array;
 	my $oid;
+
+	foreach my $drive (keys %hash) {
+		print Dumper($drive);
+		die();
+	}
 			
 	foreach my $drive (keys %hash) {
 		$oid = $Configurator::persist_snmp_base_oid . "." . $unique;

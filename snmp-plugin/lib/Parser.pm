@@ -81,8 +81,8 @@ sub fetch_smart_data {
 	for my $smart_command (@smartd_commands) {
 		if ($smart_command) {
 			my @smart_output = `$smart_command`;
-			push (@{$self{"drive-".$loop}{data}}, values @smart_output);
-			$self{"drive-".$loop}{exitcode} = $?;
+			push (@{$self{$loop}{data}}, values @smart_output);
+			$self{$loop}{exitcode} = $?;
 			$loop++;
 		}
 	}
