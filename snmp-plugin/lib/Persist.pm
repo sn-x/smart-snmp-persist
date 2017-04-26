@@ -27,19 +27,13 @@ sub update_tree {
 sub tree {
 	my $self   = Parser->fetch_parser_cache();
 	my %hash   = %{$self};
-	my $unique = 1;
 	my @array;
 	my $oid;
 
-	foreach my $drive (keys %hash) {
-		print Dumper($drive);
-		die();
-	}
-			
-	foreach my $drive (keys %hash) {
-		$oid = $Configurator::persist_snmp_base_oid . "." . $unique;
+	foreach my $drive (sort keys %hash) {
+		$drive =~ /drive-(\d+)/;
+		$oid = $Configurator::persist_snmp_base_oid . "." . $1;
 		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{attributes};
-		$unique++;
 	}
 
 	return @array;
