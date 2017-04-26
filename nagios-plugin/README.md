@@ -2,15 +2,15 @@
 
 Nagios config examples:
 
-command definition (replace path with your values):
+_command definition_
 ```
 define command{
         command_name    check_snmp_smart
-        command_line    $USER1$/custom/nagios-snmp-smart.pl $HOSTADDRESS$ $ARG1$ $ARG2$
+        command_line    $USER1$/nagios-snmp-smart.pl $HOSTADDRESS$ $ARG1$ $ARG2$
 }
 ```
 
-service definition (replace snmp-community and snmp-oid with your values):
+_service definition_
 ```
 define service {
         use                     hourly-check
