@@ -73,7 +73,7 @@ sub secondary_info {
 }
 
 sub normalize_return_code {
-	my $return_code = @_;
+	my ($return_code) = @_;
 	my $code_description;
 
 	my $normal_digit = $return_code / 256;
