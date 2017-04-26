@@ -1,11 +1,11 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
 
 use strict;
 use warnings;
 use Net::SNMP;
 use Data::Dumper;
 
-my $snmp_timeout = 2; # snmp connect timeout in seconds
+my $snmp_timeout = 5; # snmp connect timeout in seconds
 
 if (!$ARGV[2]) {
 	print "$0 snmp_hostname snmp_community snmp_baseoid\n\n";
@@ -65,11 +65,30 @@ sub secondary_info {
 		$secondary_info .= "Vendor:\t\t"    . $snmp_data_hash{$oid . ".3"}   . "\n" if ($snmp_data_hash{$oid . ".3"});
 		$secondary_info .= "Size:\t\t"      . $snmp_data_hash{$oid . ".4"}   . "\n" if ($snmp_data_hash{$oid . ".4"});
 		$secondary_info .= "Return code:\t" . $snmp_data_hash{$oid . ".100"} . "\n";
-		$secondary_info .= "\n ";
+		$secondary_info .= " \n";
 		$drive++;
 	}
 
 	return $secondary_info;
+}
+
+sub normalize_return_code {
+	my $return_code = @_;
+	my $code_description;
+
+	my $normal_digit = $return_code / 256;
+
+	$code_description = "Everything OK" if ($normal_digit == 0);
+	$code_description = "Command line did not parse." if ($normal_digit == 1); # This will never happen
+	$code_description = "Device open failed." if ($normal_digit == 2); # This will never happen
+	$code_description = "Some SMART or other ATA command to the disk failed" if ($normal_digit == 4); # This will never happen
+	$code_description = "SMART status check returned \"DISK FAILING\"." if ($normal_digit == 8);
+	$code_description = "We found prefail Attributes <= threshold." if ($normal_digit == 16);
+	$code_description = "SMART status check returned \"DISK OK\" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past." if ($normal_digit == 32);
+	$code_description = "The device error log contains records of errors." if ($normal_digit) == 64;
+	$code_description = "The device self-test log contains records of errors." if ($normal_digit) == 128;
+
+	return $normal_digit . " - " . $code_description;
 }
 
 sub check_for_disk_problems {
