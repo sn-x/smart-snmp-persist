@@ -2,7 +2,7 @@
 
 Nagios config examples:
 
-_command definition_
+*command definition*
 ```
 define command {
 	command_name	check_snmp_smart
@@ -10,7 +10,7 @@ define command {
 }
 ```
 
-_service definition_
+*service definition*
 ```
 define service {
 	use			hourly-check
