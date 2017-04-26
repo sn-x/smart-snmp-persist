@@ -64,7 +64,7 @@ sub secondary_info {
 		$secondary_info .= "Serial:\t\t"    . $snmp_data_hash{$oid . ".2"}   . "\n" if ($snmp_data_hash{$oid . ".2"});
 		$secondary_info .= "Vendor:\t\t"    . $snmp_data_hash{$oid . ".3"}   . "\n" if ($snmp_data_hash{$oid . ".3"});
 		$secondary_info .= "Size:\t\t"      . $snmp_data_hash{$oid . ".4"}   . "\n" if ($snmp_data_hash{$oid . ".4"});
-		$secondary_info .= "Return code:\t" . $snmp_data_hash{$oid . ".100"} . "\n";
+		$secondary_info .= "Return code:\t" . normalize_return_code($snmp_data_hash{$oid . ".100"}) . "\n";
 		$secondary_info .= " \n";
 		$drive++;
 	}
