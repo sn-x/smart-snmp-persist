@@ -31,5 +31,5 @@ In action examples:
 
 2) Problem:
 
-![nagios_problem](https://github.com/sn-x/snmp-smart/raw/master/git-homepage/nagios_ok.png)
+![nagios_problem](https://github.com/sn-x/snmp-smart/raw/master/git-homepage/nagios_problem.png)
 
