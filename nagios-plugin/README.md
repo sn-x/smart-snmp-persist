@@ -4,21 +4,21 @@ Nagios config examples:
 
 _command definition_
 ```
-define command{
-        command_name    check_snmp_smart
-        command_line    $USER1$/nagios-snmp-smart.pl $HOSTADDRESS$ $ARG1$ $ARG2$
+define command {
+	command_name	check_snmp_smart
+	command_line	$USER1$/nagios-snmp-smart.pl $HOSTADDRESS$ $ARG1$ $ARG2$
 }
 ```
 
 _service definition_
 ```
 define service {
-        use                     hourly-check
-        hostgroup_name          workstations
-        service_description     Check smart
-        check_command           check_snmp_smart!snmp-community!snmp-oid
-        retry_check_interval    10
-        servicegroups           SMART
+	use			hourly-check
+	hostgroup_name		workstations
+	service_description	Check smart
+	check_command		check_snmp_smart!snmp-community!snmp-oid
+	retry_check_interval	10
+	servicegroups		SMART
 }
 ```
 
