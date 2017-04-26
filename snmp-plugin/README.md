@@ -3,6 +3,10 @@ SMART prober and parser with SNMP persist output
 
 ## Short about
 
+###### bin/snmp_smart
+
+snmp-plugin packed into a single file with all perl dependencies included.
+
 ###### lib/Configurator.pm
 
 Configuration file.
