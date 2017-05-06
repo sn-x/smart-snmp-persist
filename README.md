@@ -5,7 +5,7 @@ SMART prober and parser with SNMP persist output
 
 ###### nagion-plugin/
 
-Nagios plugin check return codes of smartctl command on all discovered drives. On non-0, print problem description. It is easily extendable, all smart information is already available.
+Nagios plugin checks return codes of smartctl command on all discovered drives. If non-zero code found, print problem description.
 
 ###### snmp-plugin/
 
