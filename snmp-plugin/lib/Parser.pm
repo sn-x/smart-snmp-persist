@@ -81,11 +81,14 @@ sub fetch_smart_data {
 	for my $smart_command (@smartd_commands) {
 		if ($smart_command) {
 			my @smart_output = `$smart_command`;
-			push (@{$self{"drive-" . $loop}{data}}, values @smart_output);
+
+			for my $smart_output_line (@smart_output) {
+				push (@{$self{"drive-" . $loop}{data}}, $smart_output_line)
+			}
+
 			$self{"drive-" . $loop}{exitcode} = $?;
 			$loop++;
 		}
-	}
 
 	return %self;
 }
