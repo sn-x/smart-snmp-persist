@@ -148,12 +148,15 @@ sub cached_copy {
 
 	my @cached_info = read_file($Configurator::discovery_cache_file); # read file
 
-	if (@cached_info) {
-		return sort_cache_info(@cached_info);
+	if (!keys @cached_info) {
+		print "\n";
+		print "ERROR: Drive cache file empty or missing.\n\n";
+		print "There were no drives discovered or there is a permission issue with drive cache file\n";
+		print "Drive cache file: " . $Configurator::discovery_cache_file . "\n\n";
+		exit 2;
 	}
 
-	print "ERROR: Unable to create or read cache file.\n";
-	exit(2);
+	return sort_cache_info(@cached_info);
 }
 
 sub sort_cache_info {
@@ -166,6 +169,21 @@ sub sort_cache_info {
 	return @cached_info;
 }
 
+sub check_if_smart_supported {
+	my ($command)  = @_;
+	my @smart_data = `$command`;
+
+	if (($? == 256) || ($? == 512)) {
+		return 0; # 256 - command did not parse, 512 - device open failed
+        }
+
+	for my $smart_line (@smart_data) {
+		return 0 if ($smart_line =~ "Device does not support SMART");
+	}
+
+	return 1;
+}
+
 #########################################
 #	   SMARTD COMMAND GENERATORS
 #
@@ -175,8 +193,8 @@ sub jbodSMARTD {
 	my ($input) = @_; # get input
 
 	foreach my $drive (keys %{$input->{drives}}) {
-		`$Configurator::smartctl_bin -a $input->{drives}->{$drive}->{logicalname}`; # probe for drive
-		push (@self, ($Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname})) if (($? != 256) && ($? != 512) && ($? != 1024)); # add smart command to array
+		my $command = $Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname}; # specific command for jbods
+		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 	return @self; # return array of smartctl commands
 }
@@ -188,8 +206,8 @@ sub nvmeSMARTD {
 	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
 	chomp $controller ; #remove newline from end of string
 
-	`$Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver}`; # probe for drive
-	push (@self, ($Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver})) if ($? != 512); # add smart command to array
+	my $command = $Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver}; # probe for drive
+	push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 
 	return @self; # return array of smartctl commands
 }
@@ -201,14 +219,13 @@ sub scsiSMARTD {
 	my @sg_devs = `ls /dev/sg*`; # fetch all scsi drives
 
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+
 	foreach my $sg_dev (@sg_devs) {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
 
-		`$Configurator::smartctl_bin -a $sg_dev -d $driver`; # probe for drive
-		if (($? != 256) && ($? != 512) && ($? != 1024)) { # if smartd succeeded
-			push (@self, ($Configurator::smartctl_bin . " -a " . $sg_dev . " -d " . $driver)); # add smart command to array
-		}
+		my $command = $Configurator::smartctl_bin . " -a " . $sg_dev . " -d " . $driver;
+		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 
 	return @self; # return array of smartctl commands
@@ -223,15 +240,12 @@ sub wareSMARTD {
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $tw_dev (@tw_devs) {
 		my $loop = 0; # because new it's adrive, we reset loop
-		$?       = 0; # because it's a new drive, we reset exit status
 		chomp $tw_dev; # remove newline from end of string
+		my $command = $Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver;
 
-		while (($? != 256) && ($? != 512) && ($? != 1024)) { # work until exist status == 0
-			`$Configurator::smartctl_bin -a $tw_dev -d $driver,$loop`; # probe for drive
-			if (($? != 256) && ($? != 512) && ($? != 1024)) { # if smartd succeeded
-				push (@self, ($Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver . "," . $loop)); # add smart command to array
-			}
-		$loop++; # increment $loop
+		while (check_if_smart_supported($command . "," . $loop)) {
+			push (@self, ($command)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
+			$loop++; # increment $loop
 		}
 	}
 
@@ -255,14 +269,11 @@ sub megaraidSMARTD {
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $drive (keys %{$input->{drives}}) {
 		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
+		my $command = $Configurator::smartctl_bin . " -a " . $logicalname . " -d " . $driver;
 		my $loop        = 0; # because it's a new drive, we reset loop
-		$?              = 0; # because it's a new drive, we reset exit status
 
-		while (($? != 256) && ($? != 512) && ($? != 1024)) { # exit loop if no drive detected 
-			`$Configurator::smartctl_bin -a $logicalname -d $driver,$loop`; # probe for drive
-			if (($? != 256) && ($? != 512) && ($? != 1024)) { # if smartd succeeded
-				push (@self, ($Configurator::smartctl_bin . " -a " . $logicalname . " -d " . $driver . "," . $loop)); # add smart command to array
-			}
+		while (check_if_smart_supported($command . "," . $loop)) {
+			push (@self, ($command)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
 			$loop++; # increment $loop
 		}
 	}
