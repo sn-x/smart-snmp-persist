@@ -89,6 +89,7 @@ sub fetch_smart_data {
 			$self{"drive-" . $loop}{exitcode} = $?;
 			$loop++;
 		}
+	}
 
 	return %self;
 }
