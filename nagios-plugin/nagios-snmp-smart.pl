@@ -79,9 +79,9 @@ sub normalize_return_code {
 	my $normal_digit = $return_code / 256;
 
 	$code_description = "Everything OK" if ($normal_digit == 0);
-	$code_description = "Command line did not parse." if ($normal_digit == 1); # This will never happen
-	$code_description = "Device open failed." if ($normal_digit == 2); # This will never happen
-	$code_description = "Some SMART or other ATA command to the disk failed" if ($normal_digit == 4); # This will never happen
+	# $code_description = "Command line did not parse." if ($normal_digit == 1); # This should never happen, since this would never return any data
+	# $code_description = "Device open failed." if ($normal_digit == 2); # This should never happen, since this would never return any data
+	# $code_description = "Some SMART or other ATA command to the disk failed" if ($normal_digit == 4); # This is ignored, since it doesn't indicate wear and tear problems
 	$code_description = "SMART status check returned \"DISK FAILING\"." if ($normal_digit == 8);
 	$code_description = "We found prefail Attributes <= threshold." if ($normal_digit == 16);
 	$code_description = "SMART status check returned \"DISK OK\" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past." if ($normal_digit == 32);
