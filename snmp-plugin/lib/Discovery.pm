@@ -244,7 +244,7 @@ sub wareSMARTD {
 		my $command = $Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver;
 
 		while (check_if_smart_supported($command . "," . $loop)) {
-			push (@self, ($command)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
+			push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
 			$loop++; # increment $loop
 		}
 	}
@@ -273,7 +273,7 @@ sub megaraidSMARTD {
 		my $loop        = 0; # because it's a new drive, we reset loop
 
 		while (check_if_smart_supported($command . "," . $loop)) {
-			push (@self, ($command)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
+			push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
 			$loop++; # increment $loop
 		}
 	}
