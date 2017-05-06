@@ -115,7 +115,7 @@ sub check_exit_codes {
 	my ($exit_code) = @_;
 	my %self;
 
-	if ($exit_code != 0 &&) ($exit_code != 1024) { # these two are ignored
+	if (($exit_code != 0) && ($exit_code != 1024)) { # these two are ignored
 		$self{severity} = "WARNING";
 		$self{info}     = "Non-zero return code found. Check additional info in Nagios.";
 	}
