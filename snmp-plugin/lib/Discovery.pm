@@ -148,7 +148,7 @@ sub cached_copy {
 
 	my @cached_info = read_file($Configurator::discovery_cache_file); # read file
 
-	if (!keys @cached_info) {
+	if (!@cached_info) {
 		print "\n";
 		print "ERROR: Drive cache file empty or missing.\n\n";
 		print "There were no drives discovered or there is a permission issue with drive cache file\n";
