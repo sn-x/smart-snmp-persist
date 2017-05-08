@@ -114,7 +114,7 @@ sub check_exit_codes {
 
 	if (($exit_code != 0) && ($exit_code != 1024) && ($exit_code != 8192)) { # not problematic exit codes
 		$self{severity} = "WARNING";
-		$self{info}     = normalize_return_code($exit_code);
+		$self{info}     = "Non-zero exit code: " . normalize_return_code($exit_code);
 	}
 
 	return \%self if (%self);
