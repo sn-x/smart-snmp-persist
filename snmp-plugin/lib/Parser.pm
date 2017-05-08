@@ -2,7 +2,6 @@
 
 package Parser;
 
-use utf8;
 use strict;
 use warnings;
 use File::Slurp;
