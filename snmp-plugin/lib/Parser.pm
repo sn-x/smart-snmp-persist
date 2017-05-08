@@ -2,11 +2,14 @@
 
 package Parser;
 
+use utf8;
 use strict;
 use warnings;
 use File::Slurp;
 use Data::Dumper;
 use XML::Simple;
+
+my $nohup = $Configurator::bin{"nohup"};
 
 sub fetch_parser_cache {
 	my $cached_results = ""; # define empty variable;
@@ -16,7 +19,7 @@ sub fetch_parser_cache {
 	}
 
 	$cached_results = XMLin($Configurator::parser_cache_file); # parse XML string
-	system("nohup perl $0 update_cache > " . $Configurator::parser_update_log . " 2>&1 &"); # update cache in background
+	system("$nohup $0 update_cache > " . $Configurator::parser_update_log . " 2>&1 &"); # update cache in background
 
 	return $cached_results;
 }

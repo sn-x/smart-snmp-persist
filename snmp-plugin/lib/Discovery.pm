@@ -7,6 +7,10 @@ use warnings;
 use Configurator;
 use File::Slurp;
 use XML::Simple;
+use Data::Dumper;
+
+my $lshw     = $Configurator::bin{"lshw"};
+my $smartctl = $Configurator::bin{"smartctl"};
 
 ########################
 #	FUNCTIONS
@@ -14,8 +18,7 @@ use XML::Simple;
 
 sub prepare_xml {
 	print "Trying to extract device info from lshw..\n" if ($Configurator::interactive);
-
-	my @lshw_output = `$Configurator::lshw_bin -xml -class storage -class disk`; # get xml from lshw command
+	my @lshw_output = `$lshw -xml -class storage -class disk`; # get xml from lshw command
 	my @xml = @lshw_output[5 .. $#lshw_output]; # remove first 5 rows (header and comments)
 
 	if ($xml[0] !~ "<list>") { # compatibility issue with legacy lshw (everything has to be inside a single block)
@@ -193,7 +196,7 @@ sub jbodSMARTD {
 	my ($input) = @_; # get input
 
 	foreach my $drive (keys %{$input->{drives}}) {
-		my $command = $Configurator::smartctl_bin . " -a " . $input->{drives}->{$drive}->{logicalname}; # specific command for jbods
+		my $command = $smartctl . " -a " . $input->{drives}->{$drive}->{logicalname}; # specific command for jbods
 		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 	return @self; # return array of smartctl commands
@@ -206,7 +209,7 @@ sub nvmeSMARTD {
 	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
 	chomp $controller ; #remove newline from end of string
 
-	my $command = $Configurator::smartctl_bin . " -a /dev/" . $controller . " -d " . $input->{driver}; # probe for drive
+	my $command = $smartctl . " -a /dev/" . $controller . " -d " . $input->{driver}; # probe for drive
 	push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 
 	return @self; # return array of smartctl commands
@@ -224,7 +227,7 @@ sub scsiSMARTD {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
 
-		my $command = $Configurator::smartctl_bin . " -a " . $sg_dev . " -d " . $driver;
+		my $command = $smartctl . " -a " . $sg_dev . " -d " . $driver;
 		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 
@@ -241,7 +244,7 @@ sub wareSMARTD {
 	foreach my $tw_dev (@tw_devs) {
 		my $loop = 0; # because new it's adrive, we reset loop
 		chomp $tw_dev; # remove newline from end of string
-		my $command = $Configurator::smartctl_bin . " -a " . $tw_dev . " -d " . $driver;
+		my $command = $smartctl . " -a " . $tw_dev . " -d " . $driver;
 
 		while (check_if_smart_supported($command . "," . $loop)) {
 			push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
@@ -269,7 +272,7 @@ sub megaraidSMARTD {
 	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $drive (keys %{$input->{drives}}) {
 		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
-		my $command = $Configurator::smartctl_bin . " -a " . $logicalname . " -d " . $driver;
+		my $command = $smartctl . " -a " . $logicalname . " -d " . $driver;
 		my $loop        = 0; # because it's a new drive, we reset loop
 
 		while (check_if_smart_supported($command . "," . $loop)) {
