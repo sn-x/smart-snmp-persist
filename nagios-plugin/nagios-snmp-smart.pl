@@ -84,7 +84,7 @@ sub normalize_return_code {
 	$code_description = "Some SMART or other ATA command to the disk failed" if ($normal_digit == 4); # This is ignored, since it doesn't indicate wear and tear problems
 	$code_description = "SMART status check returned \"DISK FAILING\"." if ($normal_digit == 8);
 	$code_description = "We found prefail Attributes <= threshold." if ($normal_digit == 16);
-	$code_description = "SMART status check returned \"DISK OK\" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past." if ($normal_digit == 32);
+	$code_description = "SMART status check returned \"DISK OK\" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past." if ($normal_digit == 32); # This is ignored
 	$code_description = "The device error log contains records of errors." if ($normal_digit) == 64;
 	$code_description = "The device self-test log contains records of errors." if ($normal_digit) == 128;
 
@@ -115,7 +115,7 @@ sub check_exit_codes {
 	my ($exit_code) = @_;
 	my %self;
 
-	if (($exit_code != 0) && ($exit_code != 1024)) { # these two are ignored
+	if (($exit_code != 0) && ($exit_code != 1024) && ($exit_code != 8192)) { # these two are ignored
 		$self{severity} = "WARNING";
 		$self{info}     = "Non-zero return code found. Check additional info in Nagios.";
 	}
