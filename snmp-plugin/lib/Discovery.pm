@@ -38,8 +38,14 @@ sub find_drives {
 		if ($drive_info_path =~ /sys\/dev\/block\/(3|8|259):.+\/uevent/g) {
 			my $drive_name = `$grep DEVNAME $drive_info_path` if (`$grep DEVTYPE=disk $drive_info_path`);
 			if (defined($drive_name) && $drive_name ne "") {
-				my $drive_path = "/dev/" . $1 if $drive_name =~ /DEVNAME=([a-z]+)/;
-				push (@drives, $drive_path) if ($drive_path);
+				if ($drive_name =~ /DEVNAME=([a-z].*)/) {
+					my $name = $1;
+					if ($name =~ "nvme") {
+						$name = substr($name, 0, -2);
+					}
+					my $drive_path = "/dev/" . $name;
+					push (@drives, $drive_path) if ($drive_path);
+				}
 			}
 		}
 	}
@@ -60,10 +66,10 @@ sub prepare_smartd_commands {
 				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "ahci");
 				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "isci");
 				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "mpt2sas");
-				push(@smartd_cmds, nvmeSMARTD($drive))		if ($module eq "nvme");
-				push(@smartd_cmds, scsiSMARTD($drive))		if ($module eq "aacraid");
-				push(@smartd_cmds, wareSMARTD($drive))		if ($module eq "3w-9xxx");
-				push(@smartd_cmds, megaraidSMARTD($drive))	if ($module eq "megaraid_sas");
+				push(@smartd_cmds, nvmeSMARTD($drive, $module))	if ($module eq "nvme");
+				push(@smartd_cmds, scsiSMARTD($drive, $module))	if ($module eq "aacraid");
+				push(@smartd_cmds, wareSMARTD($drive, $module))	if ($module eq "3w-9xxx");
+				push(@smartd_cmds, percSMARTD($drive, $module))	if ($module eq "megaraid_sas");
 			}
 		} else {
 			push(@smartd_cmds, jbodSMARTD($drive));
@@ -125,23 +131,17 @@ sub check_if_smart_supported {
 
 sub jbodSMARTD {
 	my @self;
-	my (@drives) = @_; # get input
+	my ($drive,$module) = @_; # get input
 
-	foreach my $drive (@drives) {
-		my $command = $smartctl . " -a " . $drive; # specific command for jbods
-		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
-	}
-	return @self; # return array of smartctl commands
+	my $command = $smartctl . " -a " . $drive; # specific command for jbods
+	return $command if (check_if_smart_supported($command)); # return command on success
 }
 
 sub nvmeSMARTD {
 	my @self;
-	my ($input)	 = @_; # get input
-	my $handle	 = $1 if ($input->{handle} =~ /^.*:(.{1,4}:.{1,2}:.{1,2}\..)$/); # set handle if variable conatins PCI address (regex match)
-	my $controller   = `ls \"/sys/bus/pci/devices/$handle/misc/\"`; # get controller name from disk location
-	chomp $controller ; #remove newline from end of string
+	my ($drive, $module) = @_; # get input
 
-	my $command = $smartctl . " -a /dev/" . $controller . " -d " . $input->{driver}; # probe for drive
+	my $command = $smartctl . " -a /dev/" . $drive . " -d " . $Configurator::driver_map{$module}; # probe for drive
 	push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 
 	return @self; # return array of smartctl commands
@@ -149,17 +149,16 @@ sub nvmeSMARTD {
 
 sub scsiSMARTD {
 	my @self;
-	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
+	my ($drive, $module) = @_; # get input	
 	my @sg_devs = `ls /dev/sg*`; # fetch all scsi drives
 
-	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	print "Probing for " . $Configurator::driver_map{$module} . " drives. This could take some time..\n" if ($Configurator::interactive);
 
 	foreach my $sg_dev (@sg_devs) {
 		$? = 0; # because it's a new drive, we reset exit status
 		chomp $sg_dev; # remove newline from end of string
 
-		my $command = $smartctl . " -a " . $sg_dev . " -d " . $driver;
+		my $command = $smartctl . " -a " . $sg_dev . " -d " . $Configurator::driver_map{$module};
 		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 
@@ -168,15 +167,14 @@ sub scsiSMARTD {
 
 sub wareSMARTD {
 	my @self;
-	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
+	my ($drive, $module) = @_; # get input
 	my @tw_devs = `ls /dev/tw*`; # fetch all virtual drives created by driver
 
-	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	print "Probing for " . $Configurator::driver_map{$module} . " drives. This could take some time..\n" if ($Configurator::interactive);
 	foreach my $tw_dev (@tw_devs) {
 		my $loop = 0; # because new it's adrive, we reset loop
 		chomp $tw_dev; # remove newline from end of string
-		my $command = $smartctl . " -a " . $tw_dev . " -d " . $driver;
+		my $command = $smartctl . " -a " . $tw_dev . " -d " . $Configurator::driver_map{$module};
 
 		while (check_if_smart_supported($command . "," . $loop)) {
 			push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
@@ -187,30 +185,17 @@ sub wareSMARTD {
 	return @self; # return array of smartctl commands
 }
 
-sub megaraidSMARTD {
+sub percSMARTD {
 	my @self;
-	my ($input) = @_; # get input
-	my $driver  = $Configurator::driver_map{$input->{driver}}; # translate kernel driver to smartd driver
-	my $loop    = 0;
+	my ($drive, $module) = @_; # get input
 
-	# probe for drives
-        if(!(keys %{$input->{drives}})) { # if array with drives is empty
-                foreach my $logicalname ("/dev/sda".."/dev/sdz") { # try these drives
-			$input->{drives}{$loop}{logicalname} = $logicalname;
-			$loop++;
-		}
-	}
+	print "Probing for " . $Configurator::driver_map{$module} . " drives. This could take some time..\n" if ($Configurator::interactive);
+	my $command = $smartctl . " -a " . $drive . " -d " . $Configurator::driver_map{$module};
 
-	print "Probing for " . $Configurator::driver_map{$input->{driver}} . " drives. This could take some time..\n" if ($Configurator::interactive);
-	foreach my $drive (keys %{$input->{drives}}) {
-		my $logicalname = $input->{drives}{$drive}{logicalname}; # logical name from lshw
-		my $command = $smartctl . " -a " . $logicalname . " -d " . $driver;
-		my $loop        = 0; # because it's a new drive, we reset loop
-
-		while (check_if_smart_supported($command . "," . $loop)) {
-			push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
-			$loop++; # increment $loop
-		}
+	my $loop = 0;
+	while (check_if_smart_supported($command . "," . $loop)) {
+		push (@self, ($command . "," . $loop)) if (check_if_smart_supported($command . "," . $loop)); # add smart command to array if smart capable
+		$loop++; # increment $loop
 	}
 
 	return @self; # return array of smartctl commands
