@@ -29,13 +29,9 @@ startup();
 
 sub startup {
 	if ((@ARGV) && $ARGV[0] eq "discovered_devices") {
-		my %devices = Discovery->detect_drives();
+		my @devices = Discovery->find_drives();
 
-		foreach my $device (keys %devices) {
-			print "------------------------------------------------------------\n";
-			print Dumper($devices{$device});
-			print "------------------------------------------------------------\n";
-		}
+		print Dumper(@devices);
 		exit;
 	}
 

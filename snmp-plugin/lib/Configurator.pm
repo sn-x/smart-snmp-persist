@@ -13,7 +13,7 @@ our $parser_update_log          = "/tmp/smartd_parser_update.log";
 # You shouldn't have to edit below here..
 #
 
-# hash contains: key -> kernel driver, value -> smartd driver
+# hash contains: key=kernel driver, value=smartd driver
 our %driver_map = (
         'megaraid_sas' => 'megaraid',
         '3w-9xxx'      => '3ware',
@@ -25,7 +25,7 @@ our %driver_map = (
 );
 
 # requierments array
-my @reqs = ('which', 'nohup', 'lshw', 'smartctl');
+my @reqs = ('which', 'nohup', 'lsmod', 'grep', 'smartctl');
 our %bin;
 
 # generates hash with binary paths

@@ -9,132 +9,64 @@ use File::Slurp;
 use XML::Simple;
 use Data::Dumper;
 
-my $lshw     = $Configurator::bin{"lshw"};
+my $grep     = $Configurator::bin{"grep"};
+my $lsmod    = $Configurator::bin{"lsmod"};
 my $smartctl = $Configurator::bin{"smartctl"};
 
 ########################
 #	FUNCTIONS
 #
 
-sub prepare_xml {
-	print "Trying to extract device info from lshw..\n" if ($Configurator::interactive);
-	my @lshw_output = `$lshw -xml -class storage -class disk`; # get xml from lshw command
-	my @xml = @lshw_output[5 .. $#lshw_output]; # remove first 5 rows (header and comments)
+sub find_matching_modules {
+        print "Trying to extract loaded modules from lsmod..\n" if ($Configurator::interactive);
+        my @lsmod_output = `$lsmod`;
+	my @matched_modules;
 
-	if ($xml[0] !~ "<list>") { # compatibility issue with legacy lshw (everything has to be inside a single block)
-		unshift @xml, '<list>'; # prepend <list>
-		push	@xml, '</list>'; # append </list>
+	foreach my $lsmod_line (@lsmod_output) {
+		my $module = $1 if ($lsmod_line =~ /^([a-zA-Z0-9_]+)\ .*$/);
+		push(@matched_modules, $module) if exists $Configurator::driver_map{$module};
 	}
 
-	my $xmlin  = join("\n", @xml); # create string from array
-	my $xmlout = XMLin($xmlin, KeyAttr => []); # parse XML string
-
-	return $xmlout; # return XML array
+	return @matched_modules;
 }
 
-sub detect_drives {
-	my %found_drives; # hash with discovered devices
-	my $loop = 0; # reset $loop
-	my $xml  = prepare_xml(); # get xml array 
+sub find_drives {
+	my @possible_drives = `ls -1 -p /sys/dev/block/*\:*/uevent`;
+	my @drives;
 
-        if ($xml->{node}) { # lets check if a node exists
-                if(ref($xml->{node}) eq 'ARRAY') { # check if it is an array
-			foreach my $list (@{$xml->{node}}) { # search through array
-				$found_drives{$loop} = prepare_drive_hash($list) if ($list->{id}); # prepare drive to hash
-				$loop++; # increment $loop
-			}
-		}
-
-		if(ref($xml->{node}) eq 'HASH') {
-			if(ref($xml->{node}->{node}) eq 'ARRAY') { # check if it is an array
-				foreach my $list (@{$xml->{node}->{node}}) { # search through array
-					$found_drives{$loop} = prepare_drive_hash($list) if ($list->{id}); # prepare drive to hash
-					$loop++; # increment $loop
-				}
+	foreach my $drive_info_path (@possible_drives) {
+		if ($drive_info_path =~ /sys\/dev\/block\/(3|8|259):.+\/uevent/g) {
+			my $drive_name = `$grep DEVNAME $drive_info_path` if (`$grep DEVTYPE=disk $drive_info_path`);
+			if (defined($drive_name) && $drive_name ne "") {
+				my $drive_path = "/dev/" . $1 if $drive_name =~ /DEVNAME=([a-z]+)/;
+				push (@drives, $drive_path) if ($drive_path);
 			}
 		}
 	}
-	return %found_drives;
-}
 
-sub prepare_drive_hash {
-	my ($list) = @_;  # read input
-	my %self;
+	chomp @drives;
 
-	$self{type}   = $list->{id}; # type (storage, disk)
-	$self{handle} = $list->{handle} if ($list->{handle}); # PCI handle (PCI:0000:00:00)
-	$self{driver} = find_drivers($list) if find_drivers($list); # array whit devices that have drivers
-	$self{drives} = find_jbods($list)  if find_jbods($list); # array whit devices that have drives
-
-	return \%self;
-}
-	
-sub find_drivers {
-	my ($node) = @_;	# read input
-
-	# search through array for devices with a driver
-	if ($node->{configuration}->{setting}) {
-		foreach my $setting (@{$node->{configuration}->{setting}}) {
-			return $setting->{value} if ($setting->{id} =~ "driver");
-		}
-	}
-}
-
-sub find_jbods {
-	my ($node) = @_; # read input
-	my %disks; # create empty hash
-
-	# search through array for devices with drives
-	$disks{$node->{id}} = prepare_jbod_hash($node) if (($node->{id}) && ($node->{logicalname}));
-
-	if ($node->{node}) { # check if node definition exists
-		if(ref($node->{node}) eq 'HASH') { # check if it is a hash
-			my $disk = $node->{node};
-			$disks{$disk->{id}} = prepare_jbod_hash($disk) if (($disk->{id}) && $disk->{logicalname});
-		}
-
-		if(ref($node->{node}) eq 'ARRAY') { # check if it is an array
-			foreach my $disk (@{$node->{node}}) { # if it is, loop through it
-				$disks{$disk->{id}} = prepare_jbod_hash($disk) if (($disk->{id}) && $disk->{logicalname});
-			}
-		} 
-	}
-
-	return \%disks;
-}
-
-sub prepare_jbod_hash {
-        my ($node) = @_;  # read input
-        my %self; # create empty hash
-
-	$self{logicalname} = $node->{logicalname}; # we need this for smartd command
-	$self{serial}      = $node->{serial} if ($node->{serial}); # this only helps with debuging
-	$self{product}     = $node->{product} if ($node->{product}); # this only helps with debuging
-
-	return \%self;
+	return @drives;
 }
 
 sub prepare_smartd_commands {
-	my @smartd_cmds; # empty array for smartd commands
-	my %found_drives = detect_drives(); # fetch drives
+        my @modules  = find_matching_modules(); # find registered modules matching our supported list
+	my @available_drives = find_drives(); # find available drives on the system
+	my @smartd_cmds;
 
-	foreach my $drive_value (values %found_drives) { # loop through discovered drives
-		if (($drive_value->{drives} && !$drive_value->{driver})) { # if we find a drive without a driver
-			foreach my $drive (keys %{$drive_value->{drives}}) {			
-				push(@smartd_cmds, jbodSMARTD($drive_value)) if ($drive =~ "disk"); # if its a disk use jbod
+	foreach my $drive (@available_drives) { # loop through discovered drives
+		if (@modules) {
+			foreach my $module (@modules) { # try with each module
+				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "ahci");
+				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "isci");
+				push(@smartd_cmds, jbodSMARTD($drive))		if ($module eq "mpt2sas");
+				push(@smartd_cmds, nvmeSMARTD($drive))		if ($module eq "nvme");
+				push(@smartd_cmds, scsiSMARTD($drive))		if ($module eq "aacraid");
+				push(@smartd_cmds, wareSMARTD($drive))		if ($module eq "3w-9xxx");
+				push(@smartd_cmds, megaraidSMARTD($drive))	if ($module eq "megaraid_sas");
 			}
-		}
-
-		if ($drive_value->{driver}) { # if a device has a driver
-			if (\$Configurator::driver_map{$drive_value->{driver}}) { # check if the driver is supported and use configured function
-				push(@smartd_cmds, jbodSMARTD($drive_value))     if ($drive_value->{driver} eq "ahci");
-				push(@smartd_cmds, jbodSMARTD($drive_value))	 if ($drive_value->{driver} eq "isci");
-				push(@smartd_cmds, jbodSMARTD($drive_value))	 if ($drive_value->{driver} eq "mpt2sas");
-				push(@smartd_cmds, nvmeSMARTD($drive_value))	 if ($drive_value->{driver} eq "nvme");
-				push(@smartd_cmds, scsiSMARTD($drive_value))	 if ($drive_value->{driver} eq "aacraid");
-				push(@smartd_cmds, wareSMARTD($drive_value))	 if ($drive_value->{driver} eq "3w-9xxx");
-				push(@smartd_cmds, megaraidSMARTD($drive_value)) if ($drive_value->{driver} eq "megaraid_sas");
-			}
+		} else {
+			push(@smartd_cmds, jbodSMARTD($drive));
 		}
 	}
 
@@ -193,10 +125,10 @@ sub check_if_smart_supported {
 
 sub jbodSMARTD {
 	my @self;
-	my ($input) = @_; # get input
+	my (@drives) = @_; # get input
 
-	foreach my $drive (keys %{$input->{drives}}) {
-		my $command = $smartctl . " -a " . $input->{drives}->{$drive}->{logicalname}; # specific command for jbods
+	foreach my $drive (@drives) {
+		my $command = $smartctl . " -a " . $drive; # specific command for jbods
 		push (@self, ($command)) if (check_if_smart_supported($command)); # add smart command to array if smart capable
 	}
 	return @self; # return array of smartctl commands
