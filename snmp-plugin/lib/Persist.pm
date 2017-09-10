@@ -27,14 +27,14 @@ sub update_tree {
 sub tree {
 	my $self   = Parser->fetch_parser_cache();
 	my %hash   = %{$self};
-	my $oid    = $Configurator::persist_snmp_base_oid;
+	my $baseoid    = $Configurator::persist_snmp_base_oid;
 	my $drive_oid;
 	my @array;
 
 	foreach my $drive (sort keys %hash) {
 		$drive =~ /drive-(\d+)/;
 		$drive_oid = $1;
-		push(@array, oid_tree($oid, $drive_oid, $hash{$drive})) if $hash{$drive}{attributes};
+		push(@array, oid_tree($baseoid, $drive_oid, $hash{$drive})) if $hash{$drive}{attributes};
 	}
 
 	return @array;
@@ -42,21 +42,21 @@ sub tree {
 
 sub smart_table_oid {
 	my ($structure) = @_;
-	my $self;
 
-	return 1 if ($structure =~ "smart_table");
-	return 2 if ($structure =~ "controller_table");
-        return 3 if ($structure =~ "nvme_table");
-	
+	return ".1" if ($structure =~ "smart_table");
+	return ".2" if ($structure =~ "controller_table");
+        return ".3" if ($structure =~ "nvme_table");
 
 	print "ERROR: No structure detected.\n";
 	exit 1;
 }
 
 sub oid_tree {
-	my ($oid, $drive_oid, $self) = @_;
-	my %device      = %{$self};
+	my ($baseoid, $drive_oid, $self) = @_;
+	my %device = %{$self};
 	my @array;
+
+	my $oid = $baseoid . smart_table_oid($device{'structure'});
 
 	push(@array, ($oid . ".0.1." . $drive_oid => ['string',  $device{'model'}]))  if $device{'model'};
 	push(@array, ($oid . ".0.2." . $drive_oid => ['string',  $device{'serial'}])) if $device{'serial'};
@@ -65,11 +65,10 @@ sub oid_tree {
 	push(@array, ($oid . ".0.5." . $drive_oid => ['integer', $device{'exitcode'}]));
 
 	for my $smart_id (keys %{$device{'attributes'}}) {
-                my $smart_table_oid = smart_table_oid($device{'structure'});
-		my $original_id     = $smart_id;
+		my $original_id = $smart_id;
 		$smart_id =~ s/smart_/./g;
 
-		my $full_oid = $oid . $smart_table_oid . $smart_id . "." . $drive_oid;
+		my $full_oid = $oid . $smart_id . "." . $drive_oid;
 
 		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}

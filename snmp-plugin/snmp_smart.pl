@@ -74,6 +74,11 @@ sub startup {
 		exit;
 	}
 
+	if ((@ARGV) && $ARGV[0] eq "version") {
+		print $Configurator::version . "\n";
+		exit;
+	}
+
 	print "Use one of the below command line arguments:\n";
 	print "\n";
 	print "snmp_pass <baseoid>  -    <baseoid> must match oid in snmpd.conf\n";
@@ -83,6 +88,7 @@ sub startup {
 	print "discovered_commands  -    smartd commands\n";
 	print "discovered_cached    -    daily cached results\n";
 	print "update_cache         -    internal call to rebuild cache\n";
+	print "version              -    version\n";
 	exit;
 }
 

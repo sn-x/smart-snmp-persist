@@ -4,6 +4,7 @@ package Configurator;
 
 use Data::Dumper;
 
+our $version                    = "SMART SNMP Persist - SNMP Plugin 0.2.3 - snixorcek\@gmail.com"; # version
 our $interactive                = 1; # enable verbose output. disabled when using cached values
 our $discovery_cache_expiry_age = 1; # expire device cache after 1 day. this prevent redundant discoveries, but ensures new drives are detected
 our $discovery_cache_file       = "/tmp/smartd_discovered_devices_cache.txt"; # cache file path
