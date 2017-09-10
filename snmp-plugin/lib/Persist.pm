@@ -54,7 +54,7 @@ sub oid_tree {
 	for my $smart_id (keys %{$device{'attributes'}}) {
 		my $original_id = $smart_id;
 		$smart_id =~ s/smart_/./g;
-		my $full_oid = $oid . ".1" . $smart_id . $drive_oid;
+		my $full_oid = $oid . ".1" . $smart_id . "." . $drive_oid;
 		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}
 		
