@@ -56,17 +56,17 @@ sub parse_smartlog_details {
 		$self{size}   = parse_smart_size($smart_output_line)   if parse_smart_size($smart_output_line);
 
 		if ($smart_output_line =~ "SMART Attributes Data Structure revision number") {
-			$self{structure}   = "big_table";
+			$self{structure}   = "smart_table";
 			$self{attributes}  = parse_smart_big_table(@{$array})
 		}
 
 		if ($smart_output_line =~ "Error counter log:") {
-			$self{structure}   = "small_table";
+			$self{structure}   = "controller_table";
 			$self{attributes}  = parse_smart_small_table(@{$array})
 		}
 
 		if ($smart_output_line =~ "SMART/Health Information") {
-			$self{structure}   = "nvme";
+			$self{structure}   = "nvme_table";
 			$self{attributes}  = parse_smart_nvme(@{$array})
 		}
 	}

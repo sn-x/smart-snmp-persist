@@ -40,6 +40,19 @@ sub tree {
 	return @array;
 }
 
+sub smart_table_oid {
+	my ($structure) = @_;
+	my $self;
+
+	return 1 if ($structure =~ "smart_table");
+	return 2 if ($structure =~ "controller_table");
+        return 3 if ($structure =~ "nvme_table");
+	
+
+	print "ERROR: No structure detected.\n";
+	exit 1;
+}
+
 sub oid_tree {
 	my ($oid, $drive_oid, $self) = @_;
 	my %device      = %{$self};
@@ -52,9 +65,12 @@ sub oid_tree {
 	push(@array, ($oid . ".0.5." . $drive_oid => ['integer', $device{'exitcode'}]));
 
 	for my $smart_id (keys %{$device{'attributes'}}) {
-		my $original_id = $smart_id;
+                my $smart_table_oid = smart_table_oid($device{'structure'});
+		my $original_id     = $smart_id;
 		$smart_id =~ s/smart_/./g;
-		my $full_oid = $oid . ".1" . $smart_id . "." . $drive_oid;
+
+		my $full_oid = $oid . $smart_table_oid . $smart_id . "." . $drive_oid;
+
 		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}
 		
