@@ -27,33 +27,34 @@ sub update_tree {
 sub tree {
 	my $self   = Parser->fetch_parser_cache();
 	my %hash   = %{$self};
+	my $oid    = $Configurator::persist_snmp_base_oid;
+	my $drive_oid;
 	my @array;
-	my $oid;
 
 	foreach my $drive (sort keys %hash) {
 		$drive =~ /drive-(\d+)/;
-		$oid = $Configurator::persist_snmp_base_oid . "." . $1;
-		push(@array, oid_tree($oid, $hash{$drive})) if $hash{$drive}{attributes};
+		$drive_oid = $1;
+		push(@array, oid_tree($oid, $drive_oid, $hash{$drive})) if $hash{$drive}{attributes};
 	}
 
 	return @array;
 }
 
 sub oid_tree {
-	my ($oid,$self) = @_;
+	my ($oid, $drive_oid, $self) = @_;
 	my %device      = %{$self};
 	my @array;
 
-	push(@array, ($oid . ".1"   => ['string',  $device{'model'}]))  if $device{'model'};
-	push(@array, ($oid . ".2"   => ['string',  $device{'serial'}])) if $device{'serial'};
-	push(@array, ($oid . ".3"   => ['string',  $device{'vendor'}])) if $device{'vendor'};
-	push(@array, ($oid . ".4"   => ['string',  $device{'size'}]))   if $device{'size'};
-	push(@array, ($oid . ".100" => ['integer', $device{'exitcode'}]));
+	push(@array, ($oid . ".0.1." . $drive_oid => ['string',  $device{'model'}]))  if $device{'model'};
+	push(@array, ($oid . ".0.2." . $drive_oid => ['string',  $device{'serial'}])) if $device{'serial'};
+	push(@array, ($oid . ".0.3." . $drive_oid => ['string',  $device{'vendor'}])) if $device{'vendor'};
+	push(@array, ($oid . ".0.4." . $drive_oid => ['string',  $device{'size'}]))   if $device{'size'};
+	push(@array, ($oid . ".0.5." . $drive_oid => ['integer', $device{'exitcode'}]));
 
 	for my $smart_id (keys %{$device{'attributes'}}) {
 		my $original_id = $smart_id;
 		$smart_id =~ s/smart_/./g;
-		my $full_oid = $oid . ".101" . $smart_id;
+		my $full_oid = $oid . ".1" . $smart_id . $drive_oid;
 		push(@array, ($full_oid => ['integer',  $device{'attributes'}{$original_id}]));		
 	}
 		
