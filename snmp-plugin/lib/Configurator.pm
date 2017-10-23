@@ -17,7 +17,7 @@ our $parser_update_log          = "/tmp/smartd_parser_update.log";
 # hash contains: key=kernel driver, value=smartd driver
 our %driver_map = (
         'megaraid_sas' => 'megaraid',
-        '3w-9xxx'      => '3ware',
+        '3w_9xxx'      => '3ware',
         'aacraid'      => 'scsi',
         'nvme'         => 'nvme',
         'mpt2sas'      => '',
